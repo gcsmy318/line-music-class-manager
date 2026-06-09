@@ -1,0 +1,20 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="page-head">
+  <div>
+    <h1>รายงาน</h1>
+    <p>เลือกประเภทรายงานที่ต้องการดูหรือ Export</p>
+  </div>
+</div>
+
+<div class="admin-grid">
+  <% reportMenus.forEach(menu => { %>
+    <a class="admin-card" href="/reports/<%= menu.key %>">
+      <div class="admin-icon"><%= menu.icon %></div>
+      <h3><%= menu.title %></h3>
+      <p><%= menu.desc %></p>
+    </a>
+  <% }) %>
+</div>
+
+<%- include('../../partials/footer') %>

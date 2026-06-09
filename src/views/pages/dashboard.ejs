@@ -1,1 +1,80 @@
-<%- include('../partials/header') %><h2>Dashboard: <%= role %></h2><div class="grid"><% Object.keys(stats).forEach(k=>{ %><div class="card"><b><%= k %></b><span><%= stats[k] %></span></div><% }) %></div><section class="card"><h3>เมนูตามสิทธิ์</h3><% if(role==='admin'){ %><p>จัดการผู้ใช้, รายวิชา, ห้อง, Export, Import Excel, อนุมัติลงทะเบียน</p><% } else if(role==='teacher'){ %><p>ขอ QR ผ่าน LINE: ขอลิงค์ [รหัสวิชา], ดูงาน/รายงานเฉพาะวิชาตัวเอง</p><% } else if(role==='staff'){ %><p>อนุมัติห้องและดูรายงานการใช้ห้อง</p><% } else { %><p>เช็คชื่อ ส่งงาน แจ้งลา จองห้อง ดูคะแนน</p><% } %></section><%- include('../partials/footer') %>
+<%- include('../partials/header', { title, user }) %>
+
+<div class="page-head">
+  <div>
+    <h1>หน้าหลัก</h1>
+    <p>ภาพรวมระบบประจำวันที่ <%= today %></p>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <span>👤</span>
+    <p>ผู้ใช้งานทั้งหมด</p>
+    <strong><%= stats.users %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>👨‍🎓</span>
+    <p>นิสิต</p>
+    <strong><%= stats.students %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>👨‍🏫</span>
+    <p>อาจารย์</p>
+    <strong><%= stats.teachers %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>📚</span>
+    <p>รายวิชา</p>
+    <strong><%= stats.courses %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>🎹</span>
+    <p>ห้อง/ทรัพยากร</p>
+    <strong><%= stats.rooms %></strong>
+  </div>
+
+  <div class="stat-card warning">
+    <span>⏳</span>
+    <p>ผู้ใช้รออนุมัติ</p>
+    <strong><%= stats.pendingUsers %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>✅</span>
+    <p>เช็คชื่อวันนี้</p>
+    <strong><%= stats.todayAttendance %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>🎬</span>
+    <p>ส่งงานวันนี้</p>
+    <strong><%= stats.todaySubmissions %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>📋</span>
+    <p>จองห้องวันนี้</p>
+    <strong><%= stats.todayBookings %></strong>
+  </div>
+
+  <div class="stat-card warning">
+    <span>🔔</span>
+    <p>จองรออนุมัติ</p>
+    <strong><%= stats.pendingBookings %></strong>
+  </div>
+</div>
+
+<div class="quick-grid">
+  <a href="/booking" class="quick-card">🎹 จองห้องซ้อม</a>
+  <a href="/admin/bookings" class="quick-card">📋 จัดการจองห้อง</a>
+  <a href="/admin" class="quick-card">⚙️ จัดการข้อมูล</a>
+  <a href="/reports" class="quick-card">📊 รายงาน</a>
+  <a href="/import/students" class="quick-card">📥 นำเข้ารายชื่อนิสิต</a>
+</div>
+
+<%- include('../partials/footer') %>

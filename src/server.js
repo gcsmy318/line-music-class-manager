@@ -42,22 +42,22 @@ app.use((req,res,next)=>{
 });
 
 app.get('/',(req,res)=>res.redirect('/dashboard'));
-
 app.use('/auth', require('./routes/auth'));
 app.use('/', require('./routes/auth'));
+
 app.use('/dashboard', require('./routes/dashboard'));
-app.use('/admin/actions', require('./routes/adminActions'));
 app.use('/admin/bookings', require('./routes/adminBookings'));
-app.use('/admin', require('./routes/crud'));
+app.use('/admin/actions', require('./routes/adminActions'));
 
-app.use('/', require('./routes/lineWebhook'));
-
+app.use('/admin', require('./routes/adminHome'));
+app.use('/admin/crud', require('./routes/crud'));
+app.use('/reports', require('./routes/reports'));
 app.use('/checkin', require('./routes/checkin'));
 app.use('/import', require('./routes/import'));
-app.use('/reports', require('./routes/reports'));
 app.use('/booking', require('./routes/booking'));
 app.use('/room-usage', require('./routes/roomUsage'));
 
+app.use('/', require('./routes/lineWebhook'));
 
 app.get('/session-test', (req, res) => {
   res.json({

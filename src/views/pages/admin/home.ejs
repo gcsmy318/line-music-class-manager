@@ -1,0 +1,20 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="page-head">
+  <div>
+    <h1>จัดการข้อมูลระบบ</h1>
+    <p>เลือกหมวดข้อมูลที่ต้องการจัดการ</p>
+  </div>
+</div>
+
+<div class="admin-grid">
+  <% menus.forEach(menu => { %>
+    <a class="admin-card" href="<%= menu.url %>">
+      <div class="admin-icon"><%= menu.icon %></div>
+      <h3><%= menu.title %></h3>
+      <p><%= menu.desc %></p>
+    </a>
+  <% }) %>
+</div>
+
+<%- include('../../partials/footer') %>
