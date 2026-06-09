@@ -114,12 +114,14 @@ router.post('/', requireLogin, async (req, res) => {
 });
 
 router.post('/:id/cancel', requireLogin, async (req, res) => {
+
   await db.collection('bookings').doc(req.params.id).set({
     status: 'cancelled',
     cancelledAt: new Date().toISOString()
   }, { merge: true });
 
   req.flash('success', 'ยกเลิกการจองแล้ว');
+
   res.redirect('/booking');
 });
 

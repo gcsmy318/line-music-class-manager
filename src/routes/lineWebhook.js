@@ -27,7 +27,12 @@ router.get('/webhook', (req, res) => {
 
 
 router.post('/webhook', async (req,res)=>{
-  //if(process.env.NODE_ENV==='production' && !isValidLineSignature(req)) return res.status(401).end();
+    if (
+     process.env.NODE_ENV === 'production' &&
+     !isValidLineSignature(req)
+    ){
+     return res.status(401).end();
+    }
   res.status(200).end();
   for(const event of req.body.events || []){
     if(event.type !== 'message' || event.message.type !== 'text') continue;
