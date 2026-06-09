@@ -24,7 +24,6 @@ async function createQr(courseCode, user){
 app.post("/webhook", async (req, res) => {
   try {
     console.log("LINE webhook body:", JSON.stringify(req.body, null, 2));
-
     const events = req.body.events || [];
 
     for (const event of events) {
