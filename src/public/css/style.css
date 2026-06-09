@@ -1,62 +1,130 @@
-<%- include('../../partials/header', { title, user }) %>
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
 
-<div class="page-head">
-  <div>
-    <h1>รายงาน: <%= collection %></h1>
-    <p>แสดงข้อมูลล่าสุดไม่เกิน 300 รายการ</p>
-  </div>
+.page-head h1 {
+  margin: 0;
+  font-size: 28px;
+}
 
-  <a class="btn" href="/reports/<%= collection %>/export/excel">Export Excel</a>
-</div>
+.page-head p {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
 
-<% if (collection === 'bookings') { %>
-  <form class="filter-box" method="GET" action="/reports/<%= collection %>">
-    <div>
-      <label>วันที่</label>
-      <input type="date" name="date" value="<%= date %>">
-    </div>
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
 
-    <div>
-      <label>สถานะ</label>
-      <select name="status">
-        <option value="">ทั้งหมด</option>
-        <option value="pending" <%= status === 'pending' ? 'selected' : '' %>>รออนุมัติ</option>
-        <option value="approved" <%= status === 'approved' ? 'selected' : '' %>>อนุมัติแล้ว</option>
-        <option value="rejected" <%= status === 'rejected' ? 'selected' : '' %>>ไม่อนุมัติ</option>
-        <option value="cancelled" <%= status === 'cancelled' ? 'selected' : '' %>>ยกเลิก</option>
-      </select>
-    </div>
+.admin-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 22px;
+  text-decoration: none;
+  color: #111827;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+  border: 1px solid #e5e7eb;
+  transition: 0.2s;
+}
 
-    <button type="submit">ค้นหา</button>
-  </form>
-<% } %>
+.admin-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  border-color: #22c55e;
+}
 
-<div class="card">
-  <% if (rows.length === 0) { %>
-    <p>ยังไม่มีข้อมูล</p>
-  <% } else { %>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <% fields.forEach(f => { %>
-              <th><%= f %></th>
-            <% }) %>
-          </tr>
-        </thead>
+.admin-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: #ecfdf5;
+  font-size: 28px;
+  margin-bottom: 14px;
+}
 
-        <tbody>
-          <% rows.forEach(row => { %>
-            <tr>
-              <% fields.forEach(f => { %>
-                <td><%= row[f] || '' %></td>
-              <% }) %>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-  <% } %>
-</div>
+.admin-card h3 {
+  margin: 0 0 8px;
+  font-size: 19px;
+}
 
-<%- include('../../partials/footer') %>
+.admin-card p {
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 18px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+}
+
+.stat-card span {
+  font-size: 28px;
+}
+
+.stat-card p {
+  margin: 10px 0 8px;
+  color: #6b7280;
+}
+
+.stat-card strong {
+  font-size: 32px;
+}
+
+.stat-card.warning {
+  background: #fffbeb;
+  border-color: #facc15;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.quick-card {
+  background: #111827;
+  color: white;
+  padding: 18px;
+  border-radius: 14px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.quick-card:hover {
+  background: #22c55e;
+}
+
+.filter-box {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  background: white;
+  padding: 16px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  border: 1px solid #e5e7eb;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
