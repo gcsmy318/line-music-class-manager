@@ -1,0 +1,11 @@
+<%- include('../../partials/header', { title, user: null }) %>
+
+<h1>บันทึกเข้าใช้ห้อง</h1>
+
+<form method="POST" action="/room-usage/<%= roomId %>">
+  <label>รหัสนิสิต</label>
+  <input type="text" name="studentId" required>
+  <button type="submit">บันทึก</button>
+</form>
+
+<%- include('../../partials/footer') %>
