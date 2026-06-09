@@ -46,23 +46,6 @@
   }
 </style>
 
-<h3>ผังห้องเปียโน / ห้องซ้อม</h3>
-
-<div class="room-map">
-  <div>
-    <h4>ฝั่งซ้าย</h4>
-    <% rooms.filter(r => Number(r.roomNo) >= 13).forEach(room => { %>
-      <div class="room-box"><%= room.roomName %></div>
-    <% }) %>
-  </div>
-
-  <div>
-    <h4>ฝั่งขวา</h4>
-    <% rooms.filter(r => Number(r.roomNo) <= 12).forEach(room => { %>
-      <div class="room-box"><%= room.roomName %></div>
-    <% }) %>
-  </div>
-</div>
 
 <table class="grid-table">
   <thead>
