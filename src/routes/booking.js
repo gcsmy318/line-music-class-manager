@@ -24,7 +24,23 @@ router.get('/', requireLogin, async (req, res) => {
     .where('status', '==', 'active')
     .get();
 
-  const rooms = roomsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  let rooms = roomsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    rooms = rooms
+      .filter(room => !room.qrOnly)
+      .sort((a, b) => {
+        const order = {
+          piano: 1,
+          vocal: 2
+        };
+
+        const typeA = order[a.roomType] || 99;
+        const typeB = order[b.roomType] || 99;
+
+        if (typeA !== typeB) return typeA - typeB;
+
+        return Number(a.roomNo || 999) - Number(b.roomNo || 999);
+  });
 
   const bookingSnap = await db.collection('bookings')
     .where('bookingDate', '==', selectedDate)

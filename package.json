@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+		"seed:rooms": "node src/scripts/seedRooms.js",
     "seed:admin": "node src/utils/seedAdmin.js"
   },
   "engines": { "node": ">=20" },
