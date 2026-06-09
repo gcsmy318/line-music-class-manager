@@ -47,6 +47,7 @@ app.use('/auth', require('./routes/auth'));
 app.use('/', require('./routes/auth'));
 app.use('/dashboard', require('./routes/dashboard'));
 app.use('/admin/actions', require('./routes/adminActions'));
+app.use('/admin/bookings', require('./routes/adminBookings'));
 app.use('/admin', require('./routes/crud'));
 
 app.use('/', require('./routes/lineWebhook'));

@@ -1,0 +1,236 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<style>
+  .page-title {
+    margin-bottom: 16px;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(120px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .summary-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 14px;
+    background: #fff;
+  }
+
+  .summary-card strong {
+    display: block;
+    font-size: 24px;
+    margin-top: 6px;
+  }
+
+  .filter-box {
+    display: flex;
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 20px;
+    padding: 14px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #fafafa;
+  }
+
+  .filter-box label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .filter-box input,
+  .filter-box select {
+    padding: 8px;
+  }
+
+  .booking-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+  }
+
+  .booking-table th,
+  .booking-table td {
+    border-bottom: 1px solid #eee;
+    padding: 10px;
+    vertical-align: top;
+  }
+
+  .booking-table th {
+    background: #f4f4f4;
+    text-align: left;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .badge-pending {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .badge-approved {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .badge-rejected {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .badge-cancelled {
+    background: #e2e3e5;
+    color: #383d41;
+  }
+
+  .action-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    border: 0;
+    border-radius: 6px;
+    padding: 7px 10px;
+    cursor: pointer;
+  }
+
+  .btn-approve {
+    background: #198754;
+    color: white;
+  }
+
+  .btn-reject {
+    background: #dc3545;
+    color: white;
+  }
+
+  .btn-cancel {
+    background: #6c757d;
+    color: white;
+  }
+
+  .muted {
+    color: #777;
+    font-size: 12px;
+  }
+</style>
+
+<h1 class="page-title">จัดการการจองห้อง</h1>
+
+<div class="summary-grid">
+  <div class="summary-card">ทั้งหมด <strong><%= summary.total %></strong></div>
+  <div class="summary-card">รออนุมัติ <strong><%= summary.pending %></strong></div>
+  <div class="summary-card">อนุมัติแล้ว <strong><%= summary.approved %></strong></div>
+  <div class="summary-card">ไม่อนุมัติ <strong><%= summary.rejected %></strong></div>
+  <div class="summary-card">ยกเลิก <strong><%= summary.cancelled %></strong></div>
+</div>
+
+<form class="filter-box" method="GET" action="/admin/bookings">
+  <div>
+    <label>วันที่</label>
+    <input type="date" name="date" value="<%= date %>">
+  </div>
+
+  <div>
+    <label>สถานะ</label>
+    <select name="status">
+      <option value="" <%= status === '' ? 'selected' : '' %>>ทั้งหมด</option>
+      <option value="pending" <%= status === 'pending' ? 'selected' : '' %>>รออนุมัติ</option>
+      <option value="approved" <%= status === 'approved' ? 'selected' : '' %>>อนุมัติแล้ว</option>
+      <option value="rejected" <%= status === 'rejected' ? 'selected' : '' %>>ไม่อนุมัติ</option>
+      <option value="cancelled" <%= status === 'cancelled' ? 'selected' : '' %>>ยกเลิก</option>
+    </select>
+  </div>
+
+  <button class="btn" type="submit">ค้นหา</button>
+</form>
+
+<table class="booking-table">
+  <thead>
+    <tr>
+      <th>เวลา</th>
+      <th>ห้อง</th>
+      <th>ผู้จอง</th>
+      <th>สถานะ</th>
+      <th>หมายเหตุ</th>
+      <th>จัดการ</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% if (bookings.length === 0) { %>
+      <tr>
+        <td colspan="6">ไม่พบรายการจอง</td>
+      </tr>
+    <% } %>
+
+    <% bookings.forEach(b => { %>
+      <tr>
+        <td>
+          <strong><%= b.startTime %> - <%= b.endTime %></strong><br>
+          <span class="muted"><%= b.bookingDate %></span>
+        </td>
+
+        <td>
+          <strong><%= b.roomName || '-' %></strong><br>
+          <span class="muted"><%= b.roomType || '' %></span>
+        </td>
+
+        <td>
+          <strong><%= b.studentName || '-' %></strong><br>
+          <span class="muted"><%= b.studentId || '-' %></span>
+        </td>
+
+        <td>
+          <% if (b.status === 'pending') { %>
+            <span class="badge badge-pending">รออนุมัติ</span>
+          <% } else if (b.status === 'approved') { %>
+            <span class="badge badge-approved">อนุมัติแล้ว</span>
+          <% } else if (b.status === 'rejected') { %>
+            <span class="badge badge-rejected">ไม่อนุมัติ</span>
+          <% } else if (b.status === 'cancelled') { %>
+            <span class="badge badge-cancelled">ยกเลิก</span>
+          <% } else { %>
+            <span class="badge"><%= b.status || '-' %></span>
+          <% } %>
+        </td>
+
+        <td><%= b.note || '-' %></td>
+
+        <td>
+          <div class="action-row">
+            <% if (b.status === 'pending') { %>
+              <form method="POST" action="/admin/bookings/<%= b.id %>/approve">
+                <button class="btn btn-approve" type="submit">อนุมัติ</button>
+              </form>
+
+              <form method="POST" action="/admin/bookings/<%= b.id %>/reject">
+                <button class="btn btn-reject" type="submit">ไม่อนุมัติ</button>
+              </form>
+            <% } %>
+
+            <% if (b.status !== 'cancelled') { %>
+              <form method="POST" action="/admin/bookings/<%= b.id %>/cancel">
+                <button class="btn btn-cancel" type="submit">ยกเลิก</button>
+              </form>
+            <% } %>
+          </div>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<%- include('../../partials/footer') %>
