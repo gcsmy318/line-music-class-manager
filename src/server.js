@@ -9,7 +9,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const { verifySignature } = require('./services/lineService');
-
+const { db } = require('./config/firebase');
 const app = express();
 app.set('trust proxy', 1);
 app.set('view engine','ejs');
