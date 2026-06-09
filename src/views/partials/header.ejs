@@ -3,50 +3,45 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title><%= title %></title>
+  <title><%= title || 'ระบบบริหารการเรียนดนตรีผ่าน LINE' %></title>
   <link rel="stylesheet" href="/public/css/style.css">
 </head>
 
 <body>
 <header class="topbar">
-  <div class="topbar-inner">
-    <a class="brand" href="/dashboard">
-      <span class="brand-icon">🎵</span>
-      <span>
-        <strong>LINE Music Class Manager</strong>
-        <small>ระบบบริหารการเรียนดนตรี</small>
-      </span>
-    </a>
+  <div class="brand">
+    <div class="logo">♪</div>
+    <div>
+      <h1>ระบบบริหารการเรียนดนตรีผ่าน LINE</h1>
+      <p>LINE Music Class Manager</p>
+    </div>
+  </div>
 
-    <nav class="nav-menu">
-      <a href="/dashboard">Dashboard</a>
-      <a href="/booking">จองห้อง</a>
-      <a href="/admin/bookings">อนุมัติจอง</a>
-      <a href="/admin">Collections</a>
-      <a href="/reports">Reports</a>
-      <a href="/import/students">Import Students</a>
-    </nav>
+  <nav class="nav">
+    <a href="/dashboard">หน้าหลัก</a>
+    <a href="/booking">จองห้องซ้อม</a>
+    <a href="/admin/bookings">จัดการจองห้อง</a>
+    <a href="/admin">จัดการข้อมูล</a>
+    <a href="/reports">รายงาน</a>
+    <a href="/import/students">นำเข้ารายชื่อนิสิต</a>
 
     <% if(user){ %>
-      <div class="user-box">
-        <div>
-          <strong><%= user.name || user.email || 'User' %></strong>
-          <small><%= user.role || '' %></small>
-        </div>
-
-        <form method="post" action="/logout">
-          <button class="logout-btn">Logout</button>
-        </form>
-      </div>
+      <form method="post" action="/logout" class="logout-form">
+        <button type="submit">ออกจากระบบ</button>
+      </form>
     <% } %>
-  </div>
+  </nav>
 </header>
 
-<main class="page-container">
-  <% if(error && error.length){ %>
-    <div class="alert error"><%= error.join(', ') %></div>
+<main class="container">
+  <% if(typeof error !== 'undefined' && error && error.length){ %>
+    <div class="alert error">
+      <%= error.join(', ') %>
+    </div>
   <% } %>
 
-  <% if(success && success.length){ %>
-    <div class="alert success"><%= success.join(', ') %></div>
+  <% if(typeof success !== 'undefined' && success && success.length){ %>
+    <div class="alert success">
+      <%= success.join(', ') %>
+    </div>
   <% } %>
