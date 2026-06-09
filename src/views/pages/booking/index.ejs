@@ -1,0 +1,64 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<h1>จองห้อง</h1>
+
+<form method="POST" action="/booking">
+  <label>เลือกห้อง</label>
+  <select name="roomId" required>
+    <option value="">-- เลือกห้อง --</option>
+    <% rooms.forEach(room => { %>
+      <option value="<%= room.id %>">
+        <%= room.roomName || room.name || room.id %>
+      </option>
+    <% }) %>
+  </select>
+
+  <label>วันที่จอง</label>
+  <input type="date" name="bookingDate" required>
+
+  <label>เวลาเริ่ม</label>
+  <input type="time" name="startTime" required>
+
+  <label>เวลาสิ้นสุด</label>
+  <input type="time" name="endTime" required>
+
+  <label>หมายเหตุ</label>
+  <textarea name="note"></textarea>
+
+  <button type="submit">ส่งคำขอจอง</button>
+</form>
+
+<hr>
+
+<h2>ประวัติการจองของฉัน</h2>
+
+<table border="1" cellpadding="8">
+  <thead>
+    <tr>
+      <th>ห้อง</th>
+      <th>วันที่</th>
+      <th>เวลา</th>
+      <th>สถานะ</th>
+      <th>จัดการ</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% bookings.forEach(b => { %>
+      <tr>
+        <td><%= b.roomName %></td>
+        <td><%= b.bookingDate %></td>
+        <td><%= b.startTime %> - <%= b.endTime %></td>
+        <td><%= b.status %></td>
+        <td>
+          <% if (b.status === 'pending') { %>
+            <form method="POST" action="/booking/<%= b.id %>/cancel">
+              <button type="submit">ยกเลิก</button>
+            </form>
+          <% } %>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<%- include('../../partials/footer') %>

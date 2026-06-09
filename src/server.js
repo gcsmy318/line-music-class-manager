@@ -54,6 +54,8 @@ app.use('/', require('./routes/lineWebhook'));
 app.use('/checkin', require('./routes/checkin'));
 app.use('/import', require('./routes/import'));
 app.use('/reports', require('./routes/reports'));
+app.use('/booking', require('./routes/booking'));
+
 
 app.get('/session-test', (req, res) => {
   res.json({
