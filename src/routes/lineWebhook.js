@@ -21,6 +21,11 @@ async function createQr(courseCode, user){
   });
   return { url, qr: await QRCode.toDataURL(url) };
 }
+router.get('/webhook', (req, res) => {
+  res.status(200).send('LINE webhook is ready');
+});
+
+
 router.post('/webhook', async (req,res)=>{
   if(process.env.NODE_ENV==='production' && !isValidLineSignature(req)) return res.status(401).end();
   res.status(200).end();
@@ -30,13 +35,91 @@ router.post('/webhook', async (req,res)=>{
     const lineUserId = event.source.userId;
     const user = await findUserByLine(lineUserId);
     try{
-      if(text.startsWith('ลงทะเบียนอาจารย์') || text.startsWith('ลงทะเบียนเจ้าหน้าที่') || text.startsWith('ลงทะเบียน')){
-        const role = text.startsWith('ลงทะเบียนอาจารย์') ? 'teacher' : text.startsWith('ลงทะเบียนเจ้าหน้าที่') ? 'staff' : 'student';
-        const name = text.replace('ลงทะเบียนอาจารย์','').replace('ลงทะเบียนเจ้าหน้าที่','').replace('ลงทะเบียน','').trim() || 'LINE User';
-        const exists = await findUserByLine(lineUserId);
-        if(exists) return replyText(event.replyToken, 'คุณลงทะเบียนไว้แล้ว');
-        await db.collection('users').add({ role, name, lineUserId, status:'pending', createdAt:new Date().toISOString() });
-        return replyText(event.replyToken, 'บันทึกลงทะเบียนแล้ว กรุณารอ Admin อนุมัติ');
+  if (text === 'ลงทะเบียน') {
+    return replyText(event.replyToken,
+      'กรุณาส่งข้อมูลตามรูปแบบนี้:\n\n' +
+      'ลงทะเบียน\n' +
+      'รหัสนิสิต: 66000001\n' +
+      'ชื่อ-สกุล: สมชาย ใจดี\n' +
+      'เบอร์โทร: 0812345678\n' +
+      'อีเมล: somchai@example.com\n' +
+      'วิชาเอก: ดนตรีสากล\n' +
+      'ชั้นปี: 1\n' +
+      'เครื่องดนตรีหลัก: Guitar\n' +
+      'สถานที่ทำงาน: ร้าน ABC\n' +
+      'ชั่วโมงทำงานต่อสัปดาห์: 20\n' +
+      'รายได้โดยประมาณ: 5000'
+    );
+  }
+
+      if (text.startsWith('ลงทะเบียน')) {
+        const studentId = text.match(/รหัสนิสิต:\s*(.*)/)?.[1]?.trim();
+        const fullName = text.match(/ชื่อ-สกุล:\s*(.*)/)?.[1]?.trim();
+        const phone = text.match(/เบอร์โทร:\s*(.*)/)?.[1]?.trim();
+        const email = text.match(/อีเมล:\s*(.*)/)?.[1]?.trim();
+        const major = text.match(/วิชาเอก:\s*(.*)/)?.[1]?.trim();
+        const year = text.match(/ชั้นปี:\s*(.*)/)?.[1]?.trim();
+        const mainInstrument = text.match(/เครื่องดนตรีหลัก:\s*(.*)/)?.[1]?.trim();
+        const workPlace = text.match(/สถานที่ทำงาน:\s*(.*)/)?.[1]?.trim() || '';
+        const workHoursPerWeek = text.match(/ชั่วโมงทำงานต่อสัปดาห์:\s*(.*)/)?.[1]?.trim() || '';
+        const income = text.match(/รายได้โดยประมาณ:\s*(.*)/)?.[1]?.trim() || '';
+
+        if (!studentId || !fullName || !phone || !email) {
+          return replyText(event.replyToken,
+            'ข้อมูลไม่ครบ กรุณาส่งแบบนี้:\n\n' +
+            'ลงทะเบียน\n' +
+            'รหัสนิสิต: 66000001\n' +
+            'ชื่อ-สกุล: สมชาย ใจดี\n' +
+            'เบอร์โทร: 0812345678\n' +
+            'อีเมล: somchai@example.com\n' +
+            'วิชาเอก: ดนตรีสากล\n' +
+            'ชั้นปี: 1\n' +
+            'เครื่องดนตรีหลัก: Guitar'
+          );
+        }
+
+        const exists = await db.collection('users')
+          .where('lineUserId', '==', lineUserId)
+          .limit(1)
+          .get();
+
+        if (!exists.empty) {
+          return replyText(event.replyToken, 'คุณลงทะเบียนไว้แล้ว');
+        }
+
+        await db.collection('users').doc(studentId).set({
+          userId: studentId,
+          role: 'student',
+          studentId,
+          name: fullName,
+          phone,
+          email,
+          lineUserId,
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        }, { merge: true });
+
+        await db.collection('students').doc(studentId).set({
+          studentId,
+          fullName,
+          phone,
+          email,
+          major,
+          year,
+          mainInstrument,
+          workPlace,
+          workHoursPerWeek,
+          income,
+          lineUserId,
+          createdAt: new Date().toISOString()
+        }, { merge: true });
+
+        return replyText(event.replyToken,
+          'ลงทะเบียนสำเร็จแล้ว\n' +
+          'สถานะ: รอ Admin อนุมัติ\n\n' +
+          `รหัสนิสิต: ${studentId}\n` +
+          `ชื่อ: ${fullName}`
+        );
       }
       if(text.startsWith('ขอลิงค์')){
         if(!user || !['teacher','admin'].includes(user.role)) return replyText(event.replyToken,'คำสั่งนี้ใช้ได้เฉพาะอาจารย์/Admin');
