@@ -1,0 +1,1 @@
+<%- include('../partials/header') %><h2>Export Reports</h2><div class="grid"><% collections.forEach(c=>{ %><a class="card" href="/reports/<%= c %>.xlsx"><%= c %> Excel</a><% }) %></div><%- include('../partials/footer') %>

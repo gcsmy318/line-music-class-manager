@@ -1,0 +1,1 @@
+<%- include('../partials/header') %><h2><%= row && row.id ? 'Edit' : 'New' %> <%= collection %></h2><form method="post" action="<%= row && row.id ? '/admin/'+collection+'/'+row.id+'?_method=PUT' : '/admin/'+collection %>"><label>JSON Data</label><textarea name="json" rows="22"><%= json %></textarea><button>Save</button></form><%- include('../partials/footer') %>
