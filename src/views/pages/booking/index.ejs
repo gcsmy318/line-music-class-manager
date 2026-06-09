@@ -1,38 +1,111 @@
 <%- include('../../partials/header', { title, user }) %>
 
-<h1>จองห้อง</h1>
+<h1>จองห้องซ้อม</h1>
 
-<form method="POST" action="/booking">
-  <label>เลือกห้อง</label>
-  <select name="roomId" required>
-    <option value="">-- เลือกห้อง --</option>
-    <% rooms.forEach(room => { %>
-      <option value="<%= room.id %>">
-        <%= room.roomName || room.name || room.id %>
-      </option>
-    <% }) %>
-  </select>
-
-  <label>วันที่จอง</label>
-  <input type="date" name="bookingDate" required>
-
-  <label>เวลาเริ่ม</label>
-  <input type="time" name="startTime" required>
-
-  <label>เวลาสิ้นสุด</label>
-  <input type="time" name="endTime" required>
-
-  <label>หมายเหตุ</label>
-  <textarea name="note"></textarea>
-
-  <button type="submit">ส่งคำขอจอง</button>
+<form method="GET" action="/booking">
+  <label>เลือกวันที่</label>
+  <input type="date" name="date" value="<%= selectedDate %>">
+  <button type="submit">ดูตาราง</button>
 </form>
+
+<hr>
+
+<h2>ตารางห้อง วันที่ <%= selectedDate %></h2>
+
+<style>
+  .grid-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14px;
+  }
+  .grid-table th, .grid-table td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    text-align: center;
+  }
+  .available {
+    background: #d8f5d0;
+  }
+  .pending {
+    background: #fff3cd;
+  }
+  .approved {
+    background: #f8d7da;
+  }
+  .room-map {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+  }
+  .room-box {
+    border: 1px solid #999;
+    padding: 12px;
+    text-align: center;
+    border-radius: 8px;
+  }
+</style>
+
+<h3>ผังห้องเปียโน / ห้องซ้อม</h3>
+
+<div class="room-map">
+  <div>
+    <h4>ฝั่งซ้าย</h4>
+    <% rooms.filter(r => Number(r.roomNo) >= 13).forEach(room => { %>
+      <div class="room-box"><%= room.roomName %></div>
+    <% }) %>
+  </div>
+
+  <div>
+    <h4>ฝั่งขวา</h4>
+    <% rooms.filter(r => Number(r.roomNo) <= 12).forEach(room => { %>
+      <div class="room-box"><%= room.roomName %></div>
+    <% }) %>
+  </div>
+</div>
+
+<table class="grid-table">
+  <thead>
+    <tr>
+      <th>ห้อง / เวลา</th>
+      <% timeSlots.forEach(slot => { %>
+        <th><%= slot %></th>
+      <% }) %>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% rooms.forEach(room => { %>
+      <tr>
+        <td><%= room.roomName %></td>
+
+        <% timeSlots.forEach(slot => {
+          const found = bookings.find(b => b.roomId === room.id && b.startTime === slot);
+        %>
+          <td class="<%= found ? found.status : 'available' %>">
+            <% if (found) { %>
+              <strong><%= found.status === 'approved' ? 'ไม่ว่าง' : 'รออนุมัติ' %></strong><br>
+              <small><%= found.studentName || '-' %></small>
+            <% } else { %>
+              <form method="POST" action="/booking">
+                <input type="hidden" name="roomId" value="<%= room.id %>">
+                <input type="hidden" name="bookingDate" value="<%= selectedDate %>">
+                <input type="hidden" name="startTime" value="<%= slot %>">
+                <button type="submit">จอง</button>
+              </form>
+            <% } %>
+          </td>
+        <% }) %>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
 
 <hr>
 
 <h2>ประวัติการจองของฉัน</h2>
 
-<table border="1" cellpadding="8">
+<table class="grid-table">
   <thead>
     <tr>
       <th>ห้อง</th>
@@ -43,7 +116,7 @@
     </tr>
   </thead>
   <tbody>
-    <% bookings.forEach(b => { %>
+    <% myBookings.forEach(b => { %>
       <tr>
         <td><%= b.roomName %></td>
         <td><%= b.bookingDate %></td>
