@@ -51,7 +51,7 @@ app.use('/admin', require('./routes/crud'));
 
 
 /* ถ้าต้องการใช้ route เดิม /line ด้วย */
-app.use('/', require('./routes/lineWebhook'));
+app.use('/line', require('./routes/lineWebhook'));
 
 app.use('/checkin', require('./routes/checkin'));
 app.use('/import', require('./routes/import'));
