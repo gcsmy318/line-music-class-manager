@@ -3,45 +3,57 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title><%= title || 'ระบบบริหารการเรียนดนตรีผ่าน LINE' %></title>
+  <title><%= title || 'LINE Music Class Manager' %></title>
   <link rel="stylesheet" href="/public/css/style.css">
 </head>
-
 <body>
-<header class="topbar">
-  <div class="brand">
-    <div class="logo">♪</div>
-    <div>
-      <h1>ระบบบริหารการเรียนดนตรีผ่าน LINE</h1>
-      <p>LINE Music Class Manager</p>
-    </div>
-  </div>
 
-  <nav class="nav">
-    <a href="/dashboard">หน้าหลัก</a>
-    <a href="/booking">จองห้องซ้อม</a>
-    <a href="/admin/bookings">จัดการจองห้อง</a>
-    <a href="/admin">จัดการข้อมูล</a>
-    <a href="/reports">รายงาน</a>
-    <a href="/import/students">นำเข้ารายชื่อนิสิต</a>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">♪</div>
+      <div>
+        <h2>Music Class</h2>
+        <p>LINE Manager</p>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <a href="/dashboard">🏠 หน้าหลัก</a>
+      <a href="/booking">🎹 จองห้องซ้อม</a>
+      <a href="/admin/bookings">📋 จัดการจองห้อง</a>
+      <a href="/admin">⚙️ จัดการข้อมูล</a>
+      <a href="/reports">📊 รายงาน</a>
+      <a href="/import/students">📥 นำเข้านิสิต</a>
+    </nav>
 
     <% if(user){ %>
-      <form method="post" action="/logout" class="logout-form">
+      <form method="post" action="/logout" class="sidebar-logout">
         <button type="submit">ออกจากระบบ</button>
       </form>
     <% } %>
-  </nav>
-</header>
+  </aside>
 
-<main class="container">
-  <% if(typeof error !== 'undefined' && error && error.length){ %>
-    <div class="alert error">
-      <%= error.join(', ') %>
-    </div>
-  <% } %>
+  <section class="main-area">
+    <header class="topbar">
+      <div>
+        <h1><%= title || 'ระบบบริหารการเรียนดนตรีผ่าน LINE' %></h1>
+        <p>ระบบบริหารการเรียน การส่งงาน การเช็คชื่อ และจองห้องซ้อม</p>
+      </div>
 
-  <% if(typeof success !== 'undefined' && success && success.length){ %>
-    <div class="alert success">
-      <%= success.join(', ') %>
-    </div>
-  <% } %>
+      <% if(user){ %>
+        <div class="user-pill">
+          <strong><%= user.name || user.email || 'ผู้ใช้งาน' %></strong>
+          <span><%= user.role || '' %></span>
+        </div>
+      <% } %>
+    </header>
+
+    <main class="content">
+      <% if(typeof error !== 'undefined' && error && error.length){ %>
+        <div class="alert error"><%= error.join(', ') %></div>
+      <% } %>
+
+      <% if(typeof success !== 'undefined' && success && success.length){ %>
+        <div class="alert success"><%= success.join(', ') %></div>
+      <% } %>
