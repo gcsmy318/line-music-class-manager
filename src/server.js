@@ -49,9 +49,7 @@ app.use('/dashboard', require('./routes/dashboard'));
 app.use('/admin/actions', require('./routes/adminActions'));
 app.use('/admin', require('./routes/crud'));
 
-
-/* ถ้าต้องการใช้ route เดิม /line ด้วย */
-app.use('/line', require('./routes/lineWebhook'));
+app.use('/', require('./routes/lineWebhook'));
 
 app.use('/checkin', require('./routes/checkin'));
 app.use('/import', require('./routes/import'));
