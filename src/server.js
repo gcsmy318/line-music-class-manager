@@ -10,7 +10,7 @@ const cookieParser = require('cookie-parser');
 const { verifySignature } = require('./services/lineService');
 
 const app = express();
-
+app.set('trust proxy', 1);
 app.set('view engine','ejs');
 app.set('views',path.join(__dirname,'views'));
 
@@ -64,6 +64,13 @@ app.use('/line', require('./routes/lineWebhook'));
 app.use('/checkin', require('./routes/checkin'));
 app.use('/import', require('./routes/import'));
 app.use('/reports', require('./routes/reports'));
+
+app.get('/session-test', (req, res) => {
+  res.json({
+    session: req.session,
+    user: req.session.user || null
+  });
+});
 
 /* 404 ต้องอยู่ท้ายสุดเสมอ */
 app.use((req,res)=>res.status(404).render('pages/error',{
