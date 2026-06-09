@@ -1,4 +1,5 @@
 require('dotenv').config();
+const axios = require('axios');
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
@@ -49,13 +50,58 @@ app.use('/admin/actions', require('./routes/adminActions'));
 app.use('/admin', require('./routes/crud'));
 
 /* LINE webhook */
-app.get("/webhook", (req, res) => {
-  res.status(200).send("LINE webhook is ready");
-});
+app.post("/webhook", async (req, res) => {
+  try {
+    console.log("LINE webhook body:", JSON.stringify(req.body, null, 2));
 
-app.post("/webhook", (req, res) => {
-  console.log("LINE webhook body:", req.body);
-  res.status(200).json({ ok: true });
+    const events = req.body.events || [];
+
+    for (const event of events) {
+      if (event.type === "message" && event.message.type === "text") {
+        const text = event.message.text.trim();
+
+        let replyText = "";
+
+        if (text === "ลงทะเบียน") {
+          replyText =
+            "ลงทะเบียนนิสิต\n\nกรุณาส่งข้อมูลตามรูปแบบนี้:\nลงทะเบียนนิสิต รหัสนิสิต ชื่อ-สกุล เบอร์โทร อีเมล";
+        } else if (text.startsWith("ขอลิงค์")) {
+          replyText = "รับคำขอสร้าง QR Code แล้ว กรุณาระบุรหัสวิชา เช่น ขอลิงค์ MUS101";
+        } else if (text.startsWith("ส่งงาน")) {
+          replyText = "รับข้อมูลการส่งงานแล้ว";
+        } else if (text.startsWith("ลา")) {
+          replyText = "รับข้อมูลการลาแล้ว";
+        } else {
+          replyText =
+            "ระบบ LINE Music Class Manager\n\nคำสั่งที่ใช้ได้:\nลงทะเบียน\nขอลิงค์ MUS101\nส่งงาน MUS101 ลิงก์ YouTube\nลา MUS101 ลาป่วย เหตุผล";
+        }
+
+        await axios.post(
+          "https://api.line.me/v2/bot/message/reply",
+          {
+            replyToken: event.replyToken,
+            messages: [
+              {
+                type: "text",
+                text: replyText
+              }
+            ]
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
+              "Content-Type": "application/json"
+            }
+          }
+        );
+      }
+    }
+
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("Webhook error:", error.response?.data || error.message);
+    res.status(200).json({ ok: false });
+  }
 });
 
 /* ถ้าต้องการใช้ route เดิม /line ด้วย */
