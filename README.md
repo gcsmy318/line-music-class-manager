@@ -1,4 +1,4 @@
-# LINE Music Class Manager
+# LINE Music CHUP Class Manager
 
 ระบบบริหารการเรียนการสอนดนตรีผ่าน LINE + Web Admin
 
