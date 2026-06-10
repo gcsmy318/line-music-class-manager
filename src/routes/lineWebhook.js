@@ -21,18 +21,19 @@ async function createQr(courseCode, user){
   });
   return { url, qr: await QRCode.toDataURL(url) };
 }
+
 router.get('/webhook', (req, res) => {
   res.status(200).send('LINE webhook is ready');
 });
 
 
 router.post('/webhook', async (req,res)=>{
-    if (
+   /* if (
      process.env.NODE_ENV === 'production' &&
      !isValidLineSignature(req)
     ){
      return res.status(401).end();
-    }
+    }*/
   res.status(200).end();
   for(const event of req.body.events || []){
     if(event.type !== 'message' || event.message.type !== 'text') continue;
