@@ -1,0 +1,26 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="card">
+  <h2>ลงทะเบียนแทนด้วย JSON</h2>
+
+  <form method="POST" action="/admin/register-json">
+    <label>วาง JSON</label>
+    <textarea name="jsonText" rows="18" required>{
+  "role": "student",
+  "id": "66000001",
+  "name": "สมชาย ใจดี",
+  "phone": "0812345678",
+  "email": "somchai@example.com",
+  "major": "ดนตรีสากล",
+  "year": "1",
+  "mainInstrument": "Guitar",
+  "workPlace": "ร้าน ABC",
+  "workHoursPerWeek": "20",
+  "income": "5000"
+}</textarea>
+
+    <button type="submit">บันทึกและอนุมัติทันที</button>
+  </form>
+</div>
+
+<%- include('../../partials/footer') %>
