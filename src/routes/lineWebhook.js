@@ -58,75 +58,215 @@ router.post('/webhook', async (req,res)=>{
     );
   }
 
-      if (text.startsWith('ลงทะเบียน')) {
-        const studentId = text.match(/รหัสนิสิต:\s*(.*)/)?.[1]?.trim();
-        const fullName = text.match(/ชื่อ-สกุล:\s*(.*)/)?.[1]?.trim();
-        const phone = text.match(/เบอร์โทร:\s*(.*)/)?.[1]?.trim();
-        const email = text.match(/อีเมล:\s*(.*)/)?.[1]?.trim();
-        const major = text.match(/วิชาเอก:\s*(.*)/)?.[1]?.trim();
-        const year = text.match(/ชั้นปี:\s*(.*)/)?.[1]?.trim();
-        const mainInstrument = text.match(/เครื่องดนตรีหลัก:\s*(.*)/)?.[1]?.trim();
-        const workPlace = text.match(/สถานที่ทำงาน:\s*(.*)/)?.[1]?.trim() || '';
-        const workHoursPerWeek = text.match(/ชั่วโมงทำงานต่อสัปดาห์:\s*(.*)/)?.[1]?.trim() || '';
-        const income = text.match(/รายได้โดยประมาณ:\s*(.*)/)?.[1]?.trim() || '';
 
-        if (!studentId || !fullName || !phone || !email) {
-          return replyText(event.replyToken,
-            'ข้อมูลไม่ครบ กรุณาส่งแบบนี้:\n\n' +
-            'ลงทะเบียน\n' +
-            'รหัสนิสิต: 66000001\n' +
-            'ชื่อ-สกุล: สมชาย ใจดี\n' +
-            'เบอร์โทร: 0812345678\n' +
-            'อีเมล: somchai@example.com\n' +
-            'วิชาเอก: ดนตรีสากล\n' +
-            'ชั้นปี: 1\n' +
-            'เครื่องดนตรีหลัก: Guitar'
-          );
-        }
+     if (text === 'ลงทะเบียน') {
+       return replyText(event.replyToken,
+         'เลือกรูปแบบลงทะเบียน:\n\n' +
+         '1) นิสิต\n' +
+         'พิมพ์: ลงทะเบียน\nตามด้วยข้อมูลนิสิต\n\n' +
+         '2) อาจารย์\n' +
+         'พิมพ์: ลงทะเบียนอาจารย์\nตามด้วยข้อมูลอาจารย์\n\n' +
+         '3) เจ้าหน้าที่\n' +
+         'พิมพ์: ลงทะเบียนเจ้าหน้าที่\nตามด้วยข้อมูลเจ้าหน้าที่'
+       );
+     }
 
-        const exists = await db.collection('users')
-          .where('lineUserId', '==', lineUserId)
-          .limit(1)
-          .get();
+     /* ลงทะเบียนอาจารย์ */
+     if (text.startsWith('ลงทะเบียนอาจารย์')) {
+       const teacherId = text.match(/รหัสอาจารย์:\s*(.*)/)?.[1]?.trim();
+       const fullName = text.match(/ชื่อ-สกุล:\s*(.*)/)?.[1]?.trim();
+       const phone = text.match(/เบอร์โทร:\s*(.*)/)?.[1]?.trim();
+       const email = text.match(/อีเมล:\s*(.*)/)?.[1]?.trim();
+       const department = text.match(/สาขา:\s*(.*)/)?.[1]?.trim() || '';
+       const instrument = text.match(/เครื่องดนตรี:\s*(.*)/)?.[1]?.trim() || '';
 
-        if (!exists.empty) {
-          return replyText(event.replyToken, 'คุณลงทะเบียนไว้แล้ว');
-        }
+       if (!teacherId || !fullName || !phone || !email) {
+         return replyText(event.replyToken,
+           'ข้อมูลอาจารย์ไม่ครบ กรุณาส่งแบบนี้:\n\n' +
+           'ลงทะเบียนอาจารย์\n' +
+           'รหัสอาจารย์: T001\n' +
+           'ชื่อ-สกุล: ดร.สมหญิง ใจงาม\n' +
+           'เบอร์โทร: 0899999999\n' +
+           'อีเมล: teacher@example.com\n' +
+           'สาขา: ดนตรีสากล\n' +
+           'เครื่องดนตรี: Piano'
+         );
+       }
 
-        await db.collection('users').doc(studentId).set({
-          userId: studentId,
-          role: 'student',
-          studentId,
-          name: fullName,
-          phone,
-          email,
-          lineUserId,
-          status: 'pending',
-          createdAt: new Date().toISOString()
-        }, { merge: true });
+       const exists = await db.collection('users')
+         .where('lineUserId', '==', lineUserId)
+         .limit(1)
+         .get();
 
-        await db.collection('students').doc(studentId).set({
-          studentId,
-          fullName,
-          phone,
-          email,
-          major,
-          year,
-          mainInstrument,
-          workPlace,
-          workHoursPerWeek,
-          income,
-          lineUserId,
-          createdAt: new Date().toISOString()
-        }, { merge: true });
+       if (!exists.empty) {
+         return replyText(event.replyToken, 'คุณลงทะเบียนไว้แล้ว');
+       }
 
-        return replyText(event.replyToken,
-          'ลงทะเบียนสำเร็จแล้ว\n' +
-          'สถานะ: รอ Admin อนุมัติ\n\n' +
-          `รหัสนิสิต: ${studentId}\n` +
-          `ชื่อ: ${fullName}`
-        );
-      }
+       await db.collection('users').doc(teacherId).set({
+         userId: teacherId,
+         teacherId,
+         role: 'teacher',
+         name: fullName,
+         phone,
+         email,
+         lineUserId,
+         status: 'pending',
+         createdAt: new Date().toISOString()
+       }, { merge: true });
+
+       await db.collection('teachers').doc(teacherId).set({
+         teacherId,
+         fullName,
+         phone,
+         email,
+         department,
+         instrument,
+         lineUserId,
+         createdAt: new Date().toISOString()
+       }, { merge: true });
+
+       return replyText(event.replyToken,
+         'ลงทะเบียนอาจารย์สำเร็จแล้ว\n' +
+         'สถานะ: รอ Admin อนุมัติ\n\n' +
+         `รหัสอาจารย์: ${teacherId}\n` +
+         `ชื่อ: ${fullName}`
+       );
+     }
+
+     /* ลงทะเบียนเจ้าหน้าที่ */
+     if (text.startsWith('ลงทะเบียนเจ้าหน้าที่')) {
+       const staffId = text.match(/รหัสเจ้าหน้าที่:\s*(.*)/)?.[1]?.trim();
+       const fullName = text.match(/ชื่อ-สกุล:\s*(.*)/)?.[1]?.trim();
+       const phone = text.match(/เบอร์โทร:\s*(.*)/)?.[1]?.trim();
+       const email = text.match(/อีเมล:\s*(.*)/)?.[1]?.trim();
+       const position = text.match(/ตำแหน่ง:\s*(.*)/)?.[1]?.trim() || '';
+
+       if (!staffId || !fullName || !phone || !email) {
+         return replyText(event.replyToken,
+           'ข้อมูลเจ้าหน้าที่ไม่ครบ กรุณาส่งแบบนี้:\n\n' +
+           'ลงทะเบียนเจ้าหน้าที่\n' +
+           'รหัสเจ้าหน้าที่: S001\n' +
+           'ชื่อ-สกุล: นายทดสอบ ระบบ\n' +
+           'เบอร์โทร: 0888888888\n' +
+           'อีเมล: staff@example.com\n' +
+           'ตำแหน่ง: เจ้าหน้าที่ห้องซ้อม'
+         );
+       }
+
+       const exists = await db.collection('users')
+         .where('lineUserId', '==', lineUserId)
+         .limit(1)
+         .get();
+
+       if (!exists.empty) {
+         return replyText(event.replyToken, 'คุณลงทะเบียนไว้แล้ว');
+       }
+
+       await db.collection('users').doc(staffId).set({
+         userId: staffId,
+         staffId,
+         role: 'staff',
+         name: fullName,
+         phone,
+         email,
+         lineUserId,
+         status: 'pending',
+         createdAt: new Date().toISOString()
+       }, { merge: true });
+
+       await db.collection('staff').doc(staffId).set({
+         staffId,
+         fullName,
+         phone,
+         email,
+         position,
+         lineUserId,
+         createdAt: new Date().toISOString()
+       }, { merge: true });
+
+       return replyText(event.replyToken,
+         'ลงทะเบียนเจ้าหน้าที่สำเร็จแล้ว\n' +
+         'สถานะ: รอ Admin อนุมัติ\n\n' +
+         `รหัสเจ้าหน้าที่: ${staffId}\n` +
+         `ชื่อ: ${fullName}`
+       );
+     }
+
+     /* ลงทะเบียนนิสิต */
+     if (text.startsWith('ลงทะเบียน')) {
+       const studentId = text.match(/รหัสนิสิต:\s*(.*)/)?.[1]?.trim();
+       const fullName = text.match(/ชื่อ-สกุล:\s*(.*)/)?.[1]?.trim();
+       const phone = text.match(/เบอร์โทร:\s*(.*)/)?.[1]?.trim();
+       const email = text.match(/อีเมล:\s*(.*)/)?.[1]?.trim();
+       const major = text.match(/วิชาเอก:\s*(.*)/)?.[1]?.trim();
+       const year = text.match(/ชั้นปี:\s*(.*)/)?.[1]?.trim();
+       const mainInstrument = text.match(/เครื่องดนตรีหลัก:\s*(.*)/)?.[1]?.trim();
+       const workPlace = text.match(/สถานที่ทำงาน:\s*(.*)/)?.[1]?.trim() || '';
+       const workHoursPerWeek = text.match(/ชั่วโมงทำงานต่อสัปดาห์:\s*(.*)/)?.[1]?.trim() || '';
+       const income = text.match(/รายได้โดยประมาณ:\s*(.*)/)?.[1]?.trim() || '';
+
+       if (!studentId || !fullName || !phone || !email) {
+         return replyText(event.replyToken,
+           'ข้อมูลนิสิตไม่ครบ กรุณาส่งแบบนี้:\n\n' +
+           'ลงทะเบียน\n' +
+           'รหัสนิสิต: 66000001\n' +
+           'ชื่อ-สกุล: สมชาย ใจดี\n' +
+           'เบอร์โทร: 0812345678\n' +
+           'อีเมล: somchai@example.com\n' +
+           'วิชาเอก: ดนตรีสากล\n' +
+           'ชั้นปี: 1\n' +
+           'เครื่องดนตรีหลัก: Guitar\n' +
+           'สถานที่ทำงาน: ร้าน ABC\n' +
+           'ชั่วโมงทำงานต่อสัปดาห์: 20\n' +
+           'รายได้โดยประมาณ: 5000'
+         );
+       }
+
+       const exists = await db.collection('users')
+         .where('lineUserId', '==', lineUserId)
+         .limit(1)
+         .get();
+
+       if (!exists.empty) {
+         return replyText(event.replyToken, 'คุณลงทะเบียนไว้แล้ว');
+       }
+
+       await db.collection('users').doc(studentId).set({
+         userId: studentId,
+         role: 'student',
+         studentId,
+         name: fullName,
+         phone,
+         email,
+         lineUserId,
+         status: 'pending',
+         createdAt: new Date().toISOString()
+       }, { merge: true });
+
+       await db.collection('students').doc(studentId).set({
+         studentId,
+         fullName,
+         phone,
+         email,
+         major,
+         year,
+         mainInstrument,
+         workPlace,
+         workHoursPerWeek,
+         income,
+         lineUserId,
+         createdAt: new Date().toISOString()
+       }, { merge: true });
+
+       return replyText(event.replyToken,
+         'ลงทะเบียนนิสิตสำเร็จแล้ว\n' +
+         'สถานะ: รอ Admin อนุมัติ\n\n' +
+         `รหัสนิสิต: ${studentId}\n` +
+         `ชื่อ: ${fullName}`
+       );
+     }
+
+
       if(text.startsWith('ขอลิงค์')){
         if(!user || !['teacher','admin'].includes(user.role)) return replyText(event.replyToken,'คำสั่งนี้ใช้ได้เฉพาะอาจารย์/Admin');
         const courseCode = text.split(/\s+/)[1];
