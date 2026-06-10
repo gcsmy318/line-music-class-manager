@@ -18,14 +18,37 @@
       </div>
     </div>
 
-    <nav class="sidebar-menu">
-      <a href="/dashboard">🏠 หน้าหลัก</a>
-      <a href="/booking">🎹 จองห้องซ้อม</a>
-      <a href="/admin/bookings">📋 จัดการจองห้อง</a>
-      <a href="/admin">⚙️ จัดการข้อมูล</a>
-      <a href="/reports">📊 รายงาน</a>
-      <a href="/import/students">📥 นำเข้านิสิต</a>
-    </nav>
+<nav class="sidebar-menu">
+  <a href="/dashboard">🏠 หน้าหลัก</a>
+
+  <% if (user && user.role === 'student') { %>
+    <a href="/booking">🎹 จองห้องซ้อม</a>
+    <a href="/reports">📊 รายงานของฉัน</a>
+  <% } %>
+
+  <% if (user && user.role === 'teacher') { %>
+    <a href="/admin/crud/courses">📚 รายวิชาของฉัน</a>
+    <a href="/admin/crud/attendance">✅ การเข้าเรียน</a>
+    <a href="/admin/crud/submissions">🎬 ตรวจงาน</a>
+    <a href="/reports">📊 รายงาน</a>
+  <% } %>
+
+  <% if (user && user.role === 'staff') { %>
+    <a href="/admin/bookings">📋 จัดการจองห้อง</a>
+    <a href="/admin/crud/rooms">🎹 ห้องและทรัพยากร</a>
+    <a href="/admin/crud/room_usage_logs">🏫 ประวัติใช้ห้อง</a>
+    <a href="/reports">📊 รายงานการใช้ห้อง</a>
+  <% } %>
+
+  <% if (user && user.role === 'admin') { %>
+    <a href="/booking">🎹 จองห้องซ้อม</a>
+    <a href="/admin/bookings">📋 จัดการจองห้อง</a>
+    <a href="/admin">⚙️ จัดการข้อมูล</a>
+    <a href="/reports">📊 รายงาน</a>
+    <a href="/import/students">📥 นำเข้านิสิต</a>
+    <a href="/admin/register-json">🧾 ลงทะเบียนแทนด้วย JSON</a>
+  <% } %>
+</nav>
 
     <% if(user){ %>
       <form method="post" action="/logout" class="sidebar-logout">
