@@ -52,8 +52,8 @@ app.use('/', require('./routes/auth'));
 
 app.use('/dashboard', require('./routes/dashboard'));
 app.use('/admin/actions', require('./routes/adminActions'));
-app.use('/admin/bookings', require('./routes/adminBookings'));
 app.use('/admin/register-json', require('./routes/registerJson'));
+app.use('/admin/bookings', require('./routes/adminBookings'));
 app.use('/admin', require('./routes/adminHome'));
 app.use('/admin', require('./routes/crud'));
 
