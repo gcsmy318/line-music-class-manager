@@ -114,14 +114,34 @@ router.post('/', requireLogin, async (req, res) => {
 });
 
 router.post('/:id/cancel', requireLogin, async (req, res) => {
+  const bookingRef = db.collection('bookings').doc(req.params.id);
+  const bookingDoc = await bookingRef.get();
 
-  await db.collection('bookings').doc(req.params.id).set({
+  if (!bookingDoc.exists) {
+    req.flash('error', 'ไม่พบรายการจอง');
+    return res.redirect('/booking');
+  }
+
+  const booking = bookingDoc.data();
+
+  if (booking.studentId !== req.session.user.id && booking.userId !== req.session.user.id) {
+    req.flash('error', 'คุณไม่มีสิทธิ์จัดการรายการนี้');
+    return res.redirect('/booking');
+  }
+
+  if (booking.status === 'pending') {
+    await bookingRef.delete();
+    req.flash('success', 'ลบรายการจองเรียบร้อยแล้ว');
+    return res.redirect('/booking');
+  }
+
+  await bookingRef.set({
     status: 'cancelled',
-    cancelledAt: new Date().toISOString()
+    cancelledAt: new Date().toISOString(),
+    cancelledBy: req.session.user.id
   }, { merge: true });
 
   req.flash('success', 'ยกเลิกการจองแล้ว');
-
   res.redirect('/booking');
 });
 
