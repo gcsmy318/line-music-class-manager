@@ -43,7 +43,7 @@ router.post('/webhook', async (req,res)=>{
     try{
   if (text === 'ลงทะเบียน') {
     return replyText(event.replyToken,
-      'กรุณาส่งข้อมูลตามรูปแบบนี้:\n\n' +
+      'กรุณา Copy ข้อความ แล้วส่งตามรูปแบบนี้:\n\n' +
       'ลงทะเบียน\n' +
       'รหัสนิสิต: 66000001\n' +
       'ชื่อ-สกุล: สมชาย ใจดี\n' +

@@ -1,11 +1,15 @@
-<%- include('../../partials/header', { title, user: null }) %>
+<%- include('../../partials/header', { title, user }) %>
 
-<h1>บันทึกเข้าใช้ห้อง</h1>
+<div class="card">
+  <h2>บันทึกเข้าใช้ห้อง</h2>
+  <p><strong>ห้อง:</strong> <%= room.roomName || roomId %></p>
 
-<form method="POST" action="/room-usage/<%= roomId %>">
-  <label>รหัสนิสิต</label>
-  <input type="text" name="studentId" required>
-  <button type="submit">บันทึก</button>
-</form>
+  <form method="POST" action="/room-usage/<%= roomId %>">
+    <label>รหัสนิสิต</label>
+    <input type="text" name="studentId" placeholder="เช่น 66000001" required>
+
+    <button type="submit">บันทึกเข้าใช้</button>
+  </form>
+</div>
 
 <%- include('../../partials/footer') %>
