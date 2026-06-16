@@ -2,17 +2,103 @@
 
 <div class="page-head">
   <div>
-    <h1>QR ยืนยันใช้ห้องซ้อม</h1>
-    <p>สำหรับยืนยันว่านิสิตมาใช้ห้องจริงตามรายการจอง</p>
+    <h1>เช็คอินใช้ห้องซ้อม</h1>
+    <p>ตรวจสอบ GPS ว่าอยู่ในพื้นที่คณะดุริยาง ม.ทักษิณ สงขลา ภายในระยะ <%= allowRadius %> เมตร</p>
   </div>
 </div>
 
-<form method="GET" action="/room-confirm" class="filter-box">
-  <div>
-    <label>รออัพเดท</label>
-  </div>
-</form>
+<div class="card">
+  <h2>เช็คอินวันนี้</h2>
 
+  <p>
+    กดปุ่มด้านล่างเมื่ออยู่ที่คณะดุริยาง ม.ทักษิณ สงขลา
+    ระบบจะตรวจสอบ GPS จากมือถือ/อุปกรณ์ของคุณ
+  </p>
 
+  <form method="POST" action="/room-confirm/checkin" id="checkinForm">
+    <input type="hidden" name="latitude" id="latitude">
+    <input type="hidden" name="longitude" id="longitude">
+
+    <button type="button" onclick="getLocationAndSubmit()">
+      📍 เช็คอินด้วย GPS
+    </button>
+  </form>
+
+  <p id="gpsStatus" class="muted"></p>
+</div>
+
+<div class="card">
+  <h2>รายการจองที่อนุมัติแล้วของฉัน วันที่ <%= selectedDate %></h2>
+
+  <% if (!bookings || bookings.length === 0) { %>
+    <p>ไม่พบรายการจองที่อนุมัติแล้ว</p>
+  <% } else { %>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>ห้อง</th>
+            <th>วันที่</th>
+            <th>เวลา</th>
+            <th>สถานะจอง</th>
+            <th>สถานะเข้าใช้งาน</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% bookings.forEach(b => { %>
+            <tr>
+              <td><%= b.roomName || '-' %></td>
+              <td><%= b.bookingDate || '-' %></td>
+              <td><%= b.startTime || '-' %> - <%= b.endTime || '-' %></td>
+              <td><%= b.status || '-' %></td>
+              <td>
+                <% if (b.usageStatus === 'checked_in') { %>
+                  ✅ เข้าใช้งาน
+                <% } else { %>
+                  ⏳ ยังไม่เช็คอิน
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<script>
+function getLocationAndSubmit() {
+  const gpsStatus = document.getElementById('gpsStatus');
+
+  if (!navigator.geolocation) {
+    gpsStatus.innerText = 'อุปกรณ์นี้ไม่รองรับ GPS';
+    return;
+  }
+
+  gpsStatus.innerText = 'กำลังตรวจสอบตำแหน่ง...';
+
+  navigator.geolocation.getCurrentPosition(
+    function(position) {
+      document.getElementById('latitude').value = position.coords.latitude;
+      document.getElementById('longitude').value = position.coords.longitude;
+
+      gpsStatus.innerText =
+        'พบตำแหน่งแล้ว ความแม่นยำประมาณ ' +
+        Math.round(position.coords.accuracy) +
+        ' เมตร กำลังเช็คอิน...';
+
+      document.getElementById('checkinForm').submit();
+    },
+    function(error) {
+      gpsStatus.innerText = 'ไม่สามารถอ่าน GPS ได้ กรุณาอนุญาตตำแหน่งใน Browser';
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
+}
+</script>
 
 <%- include('../../partials/footer') %>

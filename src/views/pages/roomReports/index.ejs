@@ -1,0 +1,142 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="page-head">
+  <div>
+    <h1>รายงานการใช้ห้อง</h1>
+    <p>สรุปการจอง การอนุมัติ และการเข้าใช้งานห้องซ้อม</p>
+  </div>
+</div>
+
+<form method="GET" action="/room-reports" class="filter-box">
+  <div>
+    <label>วันที่เริ่ม</label>
+    <input type="date" name="startDate" value="<%= filters.startDate %>">
+  </div>
+
+  <div>
+    <label>วันที่สิ้นสุด</label>
+    <input type="date" name="endDate" value="<%= filters.endDate %>">
+  </div>
+
+  <div>
+    <label>ห้อง</label>
+    <select name="roomId">
+      <option value="">ทุกห้อง</option>
+      <% rooms.forEach(r => { %>
+        <option value="<%= r.id %>" <%= filters.roomId === r.id ? 'selected' : '' %>>
+          <%= r.roomName || r.id %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <button type="submit">ค้นหา</button>
+</form>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <span>📋</span>
+    <p>การจองทั้งหมด</p>
+    <strong><%= summary.totalBookings %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>✅</span>
+    <p>อนุมัติแล้ว</p>
+    <strong><%= summary.approvedBookings %></strong>
+  </div>
+
+  <div class="stat-card warning">
+    <span>⏳</span>
+    <p>รออนุมัติ</p>
+    <strong><%= summary.pendingBookings %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>📍</span>
+    <p>เข้าใช้งานจริง</p>
+    <strong><%= summary.checkedIn %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>🏫</span>
+    <p>Log การใช้ห้อง</p>
+    <strong><%= summary.usageLogs %></strong>
+  </div>
+</div>
+
+<div class="card">
+  <h2>สรุปแยกตามห้อง</h2>
+
+  <% if (byRoom.length === 0) { %>
+    <p>ไม่พบข้อมูล</p>
+  <% } else { %>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>ห้อง</th>
+            <th>จองทั้งหมด</th>
+            <th>อนุมัติ</th>
+            <th>รออนุมัติ</th>
+            <th>เข้าใช้งานจริง</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% byRoom.forEach(r => { %>
+            <tr>
+              <td><%= r.roomName || '-' %></td>
+              <td><%= r.total %></td>
+              <td><%= r.approved %></td>
+              <td><%= r.pending %></td>
+              <td><%= r.checkedIn %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<div class="card">
+  <h2>รายละเอียดการจอง</h2>
+
+  <% if (bookings.length === 0) { %>
+    <p>ไม่พบรายการจอง</p>
+  <% } else { %>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>วันที่</th>
+            <th>เวลา</th>
+            <th>ห้อง</th>
+            <th>ผู้จอง</th>
+            <th>สถานะจอง</th>
+            <th>สถานะเข้าใช้งาน</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% bookings.forEach(b => { %>
+            <tr>
+              <td><%= b.bookingDate || '-' %></td>
+              <td><%= b.startTime || '-' %> - <%= b.endTime || '-' %></td>
+              <td><%= b.roomName || '-' %></td>
+              <td><%= b.studentName || '-' %><br><small><%= b.studentId || '' %></small></td>
+              <td><%= b.status || '-' %></td>
+              <td>
+                <% if (b.usageStatus === 'checked_in') { %>
+                  เข้าใช้งาน
+                <% } else { %>
+                  ยังไม่เข้าใช้งาน
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

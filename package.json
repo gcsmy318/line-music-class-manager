@@ -8,6 +8,7 @@
     "dev": "nodemon src/server.js",
 		"seed:rooms": "node src/scripts/seedRooms.js",
     "seed:admin": "node src/utils/seedAdmin.js",
+    "seed:fix-bookings": "node src/scripts/fixOldBookings.js",
 	"create:teacher-user": "node src/scripts/createTeacherUser.js"
   },
   "engines": { "node": ">=20" },

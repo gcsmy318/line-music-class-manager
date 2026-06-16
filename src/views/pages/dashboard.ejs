@@ -111,10 +111,7 @@
   </div>
 
 
-
-
 <% } else if (user.role === 'staff') { %>
-
 
  <div class="stat-grid">
     <div class="stat-card"><span>🎹</span><p>ห้องทั้งหมด</p><strong><%= stats.rooms || 0 %></strong></div>
@@ -131,10 +128,8 @@
     <div class="quick-grid">
       <a href="/admin/bookings?status=pending" class="quick-card">📋 อนุมัติการจอง</a>
       <a href="/booking" class="quick-card">🎹 ตารางห้องซ้อม</a>
-      <a href="/room-confirm" class="quick-card">✅ ยืนยันใช้ห้องซ้อม</a>
-<!--       <a href="/admin/rooms" class="quick-card">🎹 ห้องและทรัพยากร</a> -->
       <a href="/reports/bookings" class="quick-card">🏫 ประวัติใช้ห้อง</a>
-<!--       <a href="/reports" class="quick-card">📊 รายงานการใช้ห้อง</a> -->
+      <a href="/room-reports" class="quick-card">📊 รายงานการใช้ห้อง</a>
     </div>
   </div>
 <% } else if (user.role === 'student') { %>
@@ -174,6 +169,7 @@
       <a href="/student/leave" class="quick-card">🏥 ลาเรียน</a>
       <a href="/student/submissions" class="quick-card">🎬 ส่งงาน</a>
       <a href="/booking" class="quick-card">🎹 จองห้องซ้อม</a>
+      <a href="/room-confirm" class="quick-card">✅ เช็คอินใช้ห้องซ้อม</a>
     </div>
   </div>
 

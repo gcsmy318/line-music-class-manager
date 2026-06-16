@@ -151,10 +151,11 @@ router.post('/', requireLogin, async (req, res) => {
 
   const roomDoc = await db.collection('rooms').doc(roomId).get();
   const room = roomDoc.exists ? roomDoc.data() : {};
-
+  const userId = req.session.user.id;
   const studentId = req.session.user.studentId || req.session.user.id;
 
   await db.collection('bookings').add({
+    userId,
     studentId,
     studentName: req.session.user.name || '',
     roomId,

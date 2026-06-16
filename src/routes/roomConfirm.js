@@ -1,86 +1,160 @@
 const express = require('express');
-const QRCode = require('qrcode');
 const { db } = require('../config/firebase');
+const { distanceMeters } = require('../utils/geo');
+
 const router = express.Router();
 
-function requireStaff(req, res, next) {
+function requireStudent(req, res, next) {
   if (!req.session.user) return res.redirect('/login');
-  if (!['staff', 'admin'].includes(req.session.user.role)) return res.redirect('/dashboard');
+
+
+  if (!['student', 'admin', 'staff'].includes(req.session.user.role)) {
+      return res.redirect('/dashboard');
+  }
+
   next();
 }
 
-router.get('/', requireStaff, async (req, res) => {
-  const date = req.query.date || new Date().toISOString().slice(0, 10);
+const FACULTY_LAT = 7.166300;
+const FACULTY_LNG = 100.611800;
+const ALLOW_RADIUS_METERS = 50;
+
+function getUserIds(req) {
+  const userId = req.session.user.id;
+  const studentId = req.session.user.studentId || req.session.user.id;
+
+  return { userId, studentId };
+}
+
+router.get('/', requireStudent, async (req, res) => {
+
+
+  console.log('ROOM CONFIRM OPEN');
+  console.log(req.session.user);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const selectedDate = req.query.date || today;
+
+  const { userId, studentId } = getUserIds(req);
 
   const snap = await db.collection('bookings')
-    .where('bookingDate', '==', date)
+    .where('bookingDate', '==', selectedDate)
     .where('status', '==', 'approved')
     .get();
 
-  const bookings = [];
-
-  for (const doc of snap.docs) {
-    const b = { id: doc.id, ...doc.data() };
-    const url = `${process.env.WEB_BASE_URL}/room-confirm/scan/${doc.id}`;
-    b.confirmUrl = url;
-    b.qrImage = await QRCode.toDataURL(url);
-    bookings.push(b);
-  }
+  const bookings = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(b =>
+      b.studentId === studentId ||
+      b.studentId === userId ||
+      b.userId === userId
+    );
 
   res.render('pages/roomConfirm/index', {
-    title: 'QR ยืนยันใช้ห้องซ้อม',
+    title: 'เช็คอินใช้ห้องซ้อม',
     user: req.session.user,
-    date,
-    bookings
+    selectedDate,
+    bookings,
+    facultyLat: FACULTY_LAT,
+    facultyLng: FACULTY_LNG,
+    allowRadius: ALLOW_RADIUS_METERS
   });
 });
 
-router.get('/scan/:bookingId', async (req, res) => {
-  const bookingDoc = await db.collection('bookings').doc(req.params.bookingId).get();
+router.post('/checkin', requireStudent, async (req, res) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date().toISOString();
 
-  if (!bookingDoc.exists) return res.send('ไม่พบรายการจอง');
+  const userId = req.session.user.id;
+  const studentId = req.session.user.studentId || req.session.user.id;
+  const studentName = req.session.user.name || '';
 
-  const booking = { id: bookingDoc.id, ...bookingDoc.data() };
+  const lat = Number(req.body.latitude);
+  const lng = Number(req.body.longitude);
 
-  res.render('pages/roomConfirm/scan', {
-    title: 'ยืนยันใช้ห้องซ้อม',
-    user: req.session.user || null,
-    booking
-  });
-});
-
-router.post('/scan/:bookingId', async (req, res) => {
-  const { studentId } = req.body;
-
-  const bookingRef = db.collection('bookings').doc(req.params.bookingId);
-  const bookingDoc = await bookingRef.get();
-
-  if (!bookingDoc.exists) return res.send('ไม่พบรายการจอง');
-
-  const booking = bookingDoc.data();
-
-  if (booking.studentId !== studentId) {
-    return res.send('รหัสนิสิตไม่ตรงกับผู้จอง');
+  if (!lat || !lng) {
+    req.flash('error', 'ไม่พบพิกัด GPS กรุณาอนุญาตตำแหน่งใน Browser');
+    return res.redirect('/room-confirm');
   }
 
-  await db.collection('room_usage_logs').add({
-    bookingId: req.params.bookingId,
-    roomId: booking.roomId || '',
-    roomName: booking.roomName || '',
-    studentId,
-    studentName: booking.studentName || '',
-    scanType: 'booking_confirm',
-    usageDate: new Date().toISOString().slice(0, 10),
-    scanTime: new Date().toISOString(),
-    createdAt: new Date().toISOString()
+  const dist = distanceMeters(FACULTY_LAT, FACULTY_LNG, lat, lng);
+
+  if (dist > ALLOW_RADIUS_METERS) {
+    req.flash(
+      'error',
+      `คุณอยู่นอกพื้นที่คณะดุริยาง ม.ทักษิณ สงขลา ระยะประมาณ ${dist.toFixed(0)} เมตร`
+    );
+
+    return res.redirect('/room-confirm');
+  }
+
+  const snap = await db.collection('bookings')
+    .where('bookingDate', '==', today)
+    .where('status', '==', 'approved')
+    .get();
+
+  const docs = snap.docs.filter(doc => {
+    const b = doc.data();
+
+    return (
+      b.studentId === studentId ||
+      b.studentId === userId ||
+      b.userId === userId
+    );
   });
 
-  await bookingRef.set({
-    usageStatus: 'confirmed',
-    usedAt: new Date().toISOString()
-  }, { merge: true });
+  if (docs.length === 0) {
+    req.flash('error', 'ไม่พบรายการจองที่อนุมัติแล้วของคุณในวันนี้');
+    return res.redirect('/room-confirm');
+  }
 
-  res.send('ยืนยันการใช้ห้องซ้อมเรียบร้อยแล้ว');
+  const batch = db.batch();
+
+  docs.forEach(doc => {
+    const b = doc.data();
+
+    batch.set(doc.ref, {
+      usageStatus: 'checked_in',
+      usageStatusTH: 'เข้าใช้งาน',
+      checkedInAt: now,
+      checkinLatitude: lat,
+      checkinLongitude: lng,
+      checkinDistance: dist,
+      checkinLocationStatus: 'อยู่ในพื้นที่คณะดุริยาง'
+    }, { merge: true });
+
+    const logRef = db.collection('room_usage_logs').doc();
+
+    batch.set(logRef, {
+      bookingId: doc.id,
+      userId,
+      studentId,
+      studentName,
+      roomId: b.roomId || '',
+      roomName: b.roomName || '',
+      bookingDate: b.bookingDate || today,
+      startTime: b.startTime || '',
+      endTime: b.endTime || '',
+      usageStatus: 'checked_in',
+      usageStatusTH: 'เข้าใช้งาน',
+      scanType: 'web_gps_checkin',
+      latitude: lat,
+      longitude: lng,
+      distance: dist,
+      usageDate: today,
+      checkedInAt: now,
+      createdAt: now
+    });
+  });
+
+  await batch.commit();
+
+  req.flash(
+    'success',
+    `เช็คอินสำเร็จ ระบบปรับสถานะรายการจองวันนี้ของคุณเป็น "เข้าใช้งาน" แล้ว (${dist.toFixed(0)} เมตร)`
+  );
+
+  res.redirect('/room-confirm');
 });
 
 module.exports = router;

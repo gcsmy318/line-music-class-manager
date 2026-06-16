@@ -61,7 +61,7 @@ app.use('/admin', require('./routes/crud'));
 app.use('/student', require('./routes/student'));
 app.use('/teacher', require('./routes/teacher'));
 app.use('/room-confirm', require('./routes/roomConfirm'));
-
+app.use('/room-reports', require('./routes/roomReports'));
 
 app.use('/booking', require('./routes/booking'));
 app.use('/checkin', require('./routes/checkin'));
