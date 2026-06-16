@@ -1,0 +1,34 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="card">
+  <h2>อนุมัติลงทะเบียนรายวิชา</h2>
+
+  <table>
+    <tr>
+      <th>นิสิต</th>
+      <th>รายวิชา</th>
+      <th>กลุ่ม</th>
+      <th>สถานะ</th>
+      <th>จัดการ</th>
+    </tr>
+
+    <% enrollments.forEach(e => { %>
+      <tr>
+        <td><%= e.studentName %><br><small><%= e.studentId %></small></td>
+        <td><%= e.courseCode %> <%= e.courseName %></td>
+        <td><%= e.groupCode %></td>
+        <td><%= e.status %></td>
+        <td>
+          <form method="POST" action="/teacher/enrollments/<%= e.id %>/approve" style="display:inline;">
+            <button type="submit">อนุมัติ</button>
+          </form>
+          <form method="POST" action="/teacher/enrollments/<%= e.id %>/reject" style="display:inline;">
+            <button type="submit">ไม่อนุมัติ</button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+  </table>
+</div>
+
+<%- include('../../partials/footer') %>

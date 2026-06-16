@@ -10,74 +10,63 @@
 <% if (user.role === 'admin') { %>
 
   <div class="stat-grid">
-    <div class="stat-card">
-      <span>👤</span>
-      <p>ผู้ใช้งานทั้งหมด</p>
-      <strong><%= stats.users %></strong>
-    </div>
+    <div class="stat-card"><span>👤</span><p>ผู้ใช้งานทั้งหมด</p><strong><%= stats.users || 0 %></strong></div>
+    <div class="stat-card"><span>👨‍🎓</span><p>นิสิต</p><strong><%= stats.students || 0 %></strong></div>
+    <div class="stat-card"><span>👨‍🏫</span><p>อาจารย์</p><strong><%= stats.teachers || 0 %></strong></div>
+    <div class="stat-card"><span>🧑‍💼</span><p>เจ้าหน้าที่</p><strong><%= stats.staff || 0 %></strong></div>
+    <div class="stat-card warning"><span>⏳</span><p>ผู้ใช้รออนุมัติ</p><strong><%= stats.pendingUsers || 0 %></strong></div>
+    <div class="stat-card"><span>📚</span><p>รายวิชา</p><strong><%= stats.courses || 0 %></strong></div>
+    <div class="stat-card"><span>🗓️</span><p>ภาคการศึกษา</p><strong><%= stats.semesters || 0 %></strong></div>
+    <div class="stat-card"><span>🎹</span><p>ห้อง/ทรัพยากร</p><strong><%= stats.rooms || 0 %></strong></div>
+    <div class="stat-card"><span>📋</span><p>การจองทั้งหมด</p><strong><%= stats.bookings || 0 %></strong></div>
+    <div class="stat-card warning"><span>🔔</span><p>จองรออนุมัติ</p><strong><%= stats.pendingBookings || 0 %></strong></div>
+    <div class="stat-card"><span>✅</span><p>เช็คชื่อวันนี้</p><strong><%= stats.todayAttendance || 0 %></strong></div>
+    <div class="stat-card"><span>🎬</span><p>ส่งงานวันนี้</p><strong><%= stats.todaySubmissions || 0 %></strong></div>
+  </div>
 
-    <div class="stat-card">
-      <span>👨‍🎓</span>
-      <p>นิสิต</p>
-      <strong><%= stats.students %></strong>
-    </div>
-
-    <div class="stat-card">
-      <span>👨‍🏫</span>
-      <p>อาจารย์</p>
-      <strong><%= stats.teachers %></strong>
-    </div>
-
-    <div class="stat-card">
-      <span>📚</span>
-      <p>รายวิชา</p>
-      <strong><%= stats.courses %></strong>
-    </div>
-
-    <div class="stat-card">
-      <span>🎹</span>
-      <p>ห้อง/ทรัพยากร</p>
-      <strong><%= stats.rooms %></strong>
-    </div>
-
-    <div class="stat-card warning">
-      <span>⏳</span>
-      <p>ผู้ใช้รออนุมัติ</p>
-      <strong><%= stats.pendingUsers %></strong>
-    </div>
-
-    <div class="stat-card">
-      <span>✅</span>
-      <p>เช็คชื่อวันนี้</p>
-      <strong><%= stats.todayAttendance %></strong>
-    </div>
-
-    <div class="stat-card">
-      <span>🎬</span>
-      <p>ส่งงานวันนี้</p>
-      <strong><%= stats.todaySubmissions %></strong>
-    </div>
-
-    <div class="stat-card">
-      <span>📋</span>
-      <p>จองห้องวันนี้</p>
-      <strong><%= stats.todayBookings %></strong>
-    </div>
-
-    <div class="stat-card warning">
-      <span>🔔</span>
-      <p>จองรออนุมัติ</p>
-      <strong><%= stats.pendingBookings %></strong>
+  <div class="dashboard-section">
+    <h2>👥 จัดการผู้ใช้งาน</h2>
+    <div class="quick-grid">
+      <a href="/admin/users" class="quick-card">👤 ผู้ใช้งานทั้งหมด</a>
+      <a href="/admin/students" class="quick-card">👨‍🎓 ข้อมูลนิสิต</a>
+      <a href="/admin/teachers" class="quick-card">👨‍🏫 ข้อมูลอาจารย์</a>
+      <a href="/import/students" class="quick-card">📥 นำเข้านิสิตจาก Excel</a>
     </div>
   </div>
 
-  <div class="quick-grid" style="margin-top:24px;">
-    <a href="/booking" class="quick-card">🎹 จองห้องซ้อม</a>
-    <a href="/admin/bookings" class="quick-card">📋 จัดการจองห้อง</a>
-    <a href="/admin" class="quick-card">⚙️ จัดการข้อมูล</a>
-    <a href="/reports" class="quick-card">📊 รายงาน</a>
-    <a href="/import/students" class="quick-card">📥 นำเข้านิสิต</a>
-    <a href="/admin/register-json" class="quick-card">🧾 ลงทะเบียนแทนด้วย JSON</a>
+  <div class="dashboard-section">
+    <h2>📚 จัดการการเรียน</h2>
+    <div class="quick-grid">
+      <a href="/admin/semesters" class="quick-card">🗓️ ภาคการศึกษา</a>
+      <a href="/admin/courses" class="quick-card">📚 รายวิชา/กลุ่ม</a>
+      <a href="/teacher/enrollments" class="quick-card">✅ อนุมัติลงทะเบียนรายวิชา</a>
+      <a href="/teacher/attendance" class="quick-card">✅ ตรวจสอบการเข้าเรียน</a>
+      <a href="/teacher/leaves" class="quick-card">🏥 ตรวจสอบการลาเรียน</a>
+      <a href="/teacher/submissions" class="quick-card">🎬 ตรวจงาน</a>
+      <a href="/teacher/qr" class="quick-card">🔳 สร้าง QR เช็คชื่อ</a>
+    </div>
+  </div>
+
+  <div class="dashboard-section">
+    <h2>🎹 ห้องซ้อมและทรัพยากร</h2>
+    <div class="quick-grid">
+      <a href="/booking" class="quick-card">🎹 ตารางจองห้อง</a>
+      <a href="/admin/bookings?status=pending" class="quick-card">📋 จัดการจองห้อง</a>
+      <a href="/room-confirm" class="quick-card">✅ ยืนยันใช้ห้องซ้อม</a>
+      <a href="/admin/rooms" class="quick-card">🎹 ห้องและทรัพยากร</a>
+      <a href="/admin/room_usage_logs" class="quick-card">🏫 ประวัติใช้ห้อง</a>
+    </div>
+  </div>
+
+  <div class="dashboard-section">
+    <h2>📊 รายงานและข้อมูลระบบ</h2>
+    <div class="quick-grid">
+      <a href="/reports" class="quick-card">📊 รายงานภาพรวม</a>
+      <a href="/admin/attendance" class="quick-card">✅ ข้อมูลการเข้าเรียน</a>
+      <a href="/admin/leave_requests" class="quick-card">🏥 ข้อมูลการลาเรียน</a>
+      <a href="/admin/submissions" class="quick-card">🎬 ข้อมูลส่งงาน</a>
+      <a href="/admin/bookings" class="quick-card">📋 ข้อมูลการจอง</a>
+    </div>
   </div>
 
 <% } else if (user.role === 'teacher') { %>
@@ -108,45 +97,49 @@
     </div>
   </div>
 
-  <div class="quick-grid" style="margin-top:24px;">
-    <a href="/admin/crud/courses" class="quick-card">📚 รายวิชาของฉัน</a>
-    <a href="/admin/crud/attendance" class="quick-card">✅ ดูการเข้าเรียน</a>
-    <a href="/admin/crud/submissions" class="quick-card">🎬 ตรวจงาน</a>
-    <a href="/reports" class="quick-card">📊 รายงาน</a>
+
+  <div class="dashboard-section">
+    <h2>👨‍🏫 งานอาจารย์</h2>
+    <div class="quick-grid">
+      <a href="/teacher/enrollments" class="quick-card">✅ อนุมัติลงทะเบียนรายวิชา</a>
+      <a href="/teacher/attendance" class="quick-card">✅ ตรวจสอบการเข้าเรียน</a>
+      <a href="/teacher/leaves" class="quick-card">🏥 ตรวจสอบการลาเรียน</a>
+      <a href="/teacher/submissions" class="quick-card">🎬 ตรวจงาน</a>
+      <a href="/teacher/qr" class="quick-card">🔳 สร้าง QR เช็คชื่อ</a>
+      <a href="/reports" class="quick-card">📊 รายงาน</a>
+    </div>
   </div>
+
+
+
 
 <% } else if (user.role === 'staff') { %>
 
-  <div class="stat-grid">
-    <div class="stat-card">
-      <span>🎹</span>
-      <p>ห้องทั้งหมด</p>
-      <strong><%= stats.rooms || 0 %></strong>
-    </div>
 
-    <div class="stat-card">
-      <span>📋</span>
-      <p>จองห้องวันนี้</p>
-      <strong><%= stats.todayBookings || 0 %></strong>
-    </div>
-
-    <div class="stat-card warning">
-      <span>🔔</span>
-      <p>รออนุมัติ</p>
-      <strong><%= stats.pendingBookings || 0 %></strong>
-    </div>
+ <div class="stat-grid">
+    <div class="stat-card"><span>🎹</span><p>ห้องทั้งหมด</p><strong><%= stats.rooms || 0 %></strong></div>
+    <div class="stat-card"><span>📋</span><p>การจองทั้งหมด</p><strong><%= stats.allBookings || 0 %></strong></div>
+    <div class="stat-card"><span>📅</span><p>จองวันนี้</p><strong><%= stats.todayBookings || 0 %></strong></div>
+    <div class="stat-card"><span>🗓️</span><p>จองอนาคต</p><strong><%= stats.futureBookings || 0 %></strong></div>
+    <div class="stat-card warning"><span>🔔</span><p>รออนุมัติ</p><strong><%= stats.pendingBookings || 0 %></strong></div>
+    <div class="stat-card"><span>✅</span><p>อนุมัติแล้ว</p><strong><%= stats.approvedBookings || 0 %></strong></div>
+    <div class="stat-card"><span>🏫</span><p>ประวัติใช้ห้อง</p><strong><%= stats.roomUsage || 0 %></strong></div>
   </div>
 
-  <div class="quick-grid" style="margin-top:24px;">
-    <a href="/admin/bookings" class="quick-card">📋 จัดการจองห้อง</a>
-    <a href="/admin/crud/rooms" class="quick-card">🎹 ห้องและทรัพยากร</a>
-    <a href="/admin/crud/room_usage_logs" class="quick-card">🏫 ประวัติใช้ห้อง</a>
-    <a href="/reports" class="quick-card">📊 รายงาน</a>
+  <div class="dashboard-section">
+    <h2>🎹 งานเจ้าหน้าที่ห้องซ้อม</h2>
+    <div class="quick-grid">
+      <a href="/admin/bookings?status=pending" class="quick-card">📋 อนุมัติการจอง</a>
+      <a href="/booking" class="quick-card">🎹 ตารางห้องซ้อม</a>
+      <a href="/room-confirm" class="quick-card">✅ ยืนยันใช้ห้องซ้อม</a>
+<!--       <a href="/admin/rooms" class="quick-card">🎹 ห้องและทรัพยากร</a> -->
+      <a href="/reports/bookings" class="quick-card">🏫 ประวัติใช้ห้อง</a>
+<!--       <a href="/reports" class="quick-card">📊 รายงานการใช้ห้อง</a> -->
+    </div>
   </div>
-
 <% } else if (user.role === 'student') { %>
 
-  <div class="stat-grid">
+  <div  class="stat-grid">
     <div class="stat-card">
       <span>📚</span>
       <p>รายวิชาของฉัน</p>
@@ -172,6 +165,17 @@
     </div>
   </div>
 
+  <div class="dashboard-section">
+    <h2>👨‍🎓 งานนิสิต</h2>
+    <div class="quick-grid">
+      <a href="/student" class="quick-card">👨‍🎓 ข้อมูลของฉัน</a>
+      <a href="/student/enrollments" class="quick-card">📚 ลงทะเบียนรายวิชา</a>
+      <a href="/student/attendance" class="quick-card">✅ การเข้าเรียนของฉัน</a>
+      <a href="/student/leave" class="quick-card">🏥 ลาเรียน</a>
+      <a href="/student/submissions" class="quick-card">🎬 ส่งงาน</a>
+      <a href="/booking" class="quick-card">🎹 จองห้องซ้อม</a>
+    </div>
+  </div>
 
 
 <% } %>

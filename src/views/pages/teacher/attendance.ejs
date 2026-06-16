@@ -1,0 +1,148 @@
+<%- include('../../partials/header', { title, user }) %>
+<%
+  semesters = typeof semesters !== 'undefined' ? semesters : [];
+  courseCodes = typeof courseCodes !== 'undefined' ? courseCodes : [];
+  groupCodes = typeof groupCodes !== 'undefined' ? groupCodes : [];
+  filters = typeof filters !== 'undefined' ? filters : {};
+%>
+<div class="page-head">
+  <div>
+    <h1>ตรวจสอบการเข้าเรียน</h1>
+    <p>ดูข้อมูลการเข้าเรียนตามภาคเรียน วิชา กลุ่ม และสถานะ</p>
+  </div>
+</div>
+
+<%
+  records = typeof records !== 'undefined' ? records : [];
+  summary = typeof summary !== 'undefined' ? summary : {
+    present: 0,
+    late: 0,
+    absent: 0,
+    leave: 0,
+    total: 0
+  };
+%>
+<form method="GET" action="/teacher/attendance" class="filter-box">
+  <div>
+    <label>ภาคการศึกษา</label>
+    <select name="semesterId">
+      <option value="">ทั้งหมด</option>
+      <% semesters.forEach(s => { %>
+        <option value="<%= s.semesterId || s.id %>"
+          <%= filters.semesterId === (s.semesterId || s.id) ? 'selected' : '' %>>
+          <%= s.name || s.semesterName || s.id %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
+    <label>รายวิชา</label>
+    <select name="courseCode">
+      <option value="">ทั้งหมด</option>
+      <% courseCodes.forEach(code => { %>
+        <option value="<%= code %>" <%= filters.courseCode === code ? 'selected' : '' %>>
+          <%= code %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
+    <label>กลุ่ม</label>
+    <select name="groupCode">
+      <option value="">ทั้งหมด</option>
+      <% groupCodes.forEach(g => { %>
+        <option value="<%= g %>" <%= filters.groupCode === g ? 'selected' : '' %>>
+          <%= g %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
+    <label>สถานะ</label>
+    <select name="status">
+      <option value="">ทั้งหมด</option>
+      <option value="มาเรียน" <%= filters.status === 'มาเรียน' ? 'selected' : '' %>>มาเรียน</option>
+      <option value="มาสาย" <%= filters.status === 'มาสาย' ? 'selected' : '' %>>มาสาย</option>
+      <option value="ขาดเรียน" <%= filters.status === 'ขาดเรียน' ? 'selected' : '' %>>ขาดเรียน</option>
+      <option value="ลาป่วย" <%= filters.status === 'ลาป่วย' ? 'selected' : '' %>>ลาป่วย</option>
+      <option value="ลากิจ" <%= filters.status === 'ลากิจ' ? 'selected' : '' %>>ลากิจ</option>
+      <option value="ลากิจกรรมมหาวิทยาลัย" <%= filters.status === 'ลากิจกรรมมหาวิทยาลัย' ? 'selected' : '' %>>ลากิจกรรมมหาวิทยาลัย</option>
+    </select>
+  </div>
+
+  <button type="submit">ค้นหา</button>
+</form>
+<div class="stat-grid">
+  <div class="stat-card">
+    <span>✅</span>
+    <p>มาเรียน</p>
+    <strong><%= summary.present %></strong>
+  </div>
+
+  <div class="stat-card warning">
+    <span>⏰</span>
+    <p>มาสาย</p>
+    <strong><%= summary.late %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>❌</span>
+    <p>ขาดเรียน</p>
+    <strong><%= summary.absent %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>🏥</span>
+    <p>ลาเรียน</p>
+    <strong><%= summary.leave %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>📊</span>
+    <p>รวมรายการ</p>
+    <strong><%= summary.total %></strong>
+  </div>
+</div>
+
+<div class="card">
+  <h2>รายการเข้าเรียน / ลาเรียน</h2>
+
+  <% if (records.length === 0) { %>
+    <p>ไม่พบข้อมูล</p>
+  <% } else { %>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>วันที่</th>
+            <th>ประเภท</th>
+            <th>นิสิต</th>
+            <th>รายวิชา</th>
+            <th>กลุ่ม</th>
+            <th>สถานะ</th>
+            <th>หมายเหตุ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% records.forEach(r => { %>
+            <tr>
+              <td><%= r.date || '-' %></td>
+              <td><%= r.type === 'leave' ? 'ลาเรียน' : 'เข้าเรียน' %></td>
+              <td><%= r.studentName || '-' %><br><small><%= r.studentId || '' %></small></td>
+              <td><%= r.courseCode || '-' %> <%= r.courseName || '' %></td>
+              <td><%= r.groupCode || '-' %></td>
+              <td><%= r.status || '-' %></td>
+              <td><%= r.note || '-' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+
+<%- include('../../partials/footer') %>

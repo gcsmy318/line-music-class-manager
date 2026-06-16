@@ -1,0 +1,94 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="page-head">
+  <div>
+    <h1>ตรวจสอบการลาเรียน</h1>
+    <p>ดูรายการลาเรียนตามภาคเรียน วิชา กลุ่ม และประเภทการลา</p>
+  </div>
+</div>
+
+<form method="GET" action="/teacher/leaves" class="filter-box">
+  <div>
+    <label>ภาคการศึกษา</label>
+    <select name="semesterId">
+      <option value="">ทั้งหมด</option>
+      <% semesters.forEach(s => { %>
+        <option value="<%= s.semesterId || s.id %>"
+          <%= filters.semesterId === (s.semesterId || s.id) ? 'selected' : '' %>>
+          <%= s.name || s.semesterName || s.id %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
+    <label>รายวิชา</label>
+    <select name="courseCode">
+      <option value="">ทั้งหมด</option>
+      <% courseCodes.forEach(code => { %>
+        <option value="<%= code %>" <%= filters.courseCode === code ? 'selected' : '' %>>
+          <%= code %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
+    <label>กลุ่ม</label>
+    <select name="groupCode">
+      <option value="">ทั้งหมด</option>
+      <% groupCodes.forEach(g => { %>
+        <option value="<%= g %>" <%= filters.groupCode === g ? 'selected' : '' %>>
+          <%= g %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
+    <label>ประเภทการลา</label>
+    <select name="leaveType">
+      <option value="">ทั้งหมด</option>
+      <option value="ลาป่วย" <%= filters.leaveType === 'ลาป่วย' ? 'selected' : '' %>>ลาป่วย</option>
+      <option value="ลากิจ" <%= filters.leaveType === 'ลากิจ' ? 'selected' : '' %>>ลากิจ</option>
+      <option value="ลากิจกรรมมหาวิทยาลัย" <%= filters.leaveType === 'ลากิจกรรมมหาวิทยาลัย' ? 'selected' : '' %>>ลากิจกรรมมหาวิทยาลัย</option>
+    </select>
+  </div>
+
+  <button type="submit">ค้นหา</button>
+</form>
+
+<div class="card">
+  <h2>รายการลาเรียน</h2>
+
+  <% if (leaves.length === 0) { %>
+    <p>ไม่พบรายการลาเรียน</p>
+  <% } else { %>
+    <table>
+      <thead>
+        <tr>
+          <th>วันที่ลา</th>
+          <th>นิสิต</th>
+          <th>รายวิชา</th>
+          <th>กลุ่ม</th>
+          <th>ประเภท</th>
+          <th>เหตุผล</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% leaves.forEach(l => { %>
+          <tr>
+            <td><%= l.leaveDate || '-' %></td>
+            <td><%= l.studentName || '-' %><br><small><%= l.studentId || '' %></small></td>
+            <td><%= l.courseCode || '-' %> <%= l.courseName || '' %></td>
+            <td><%= l.groupCode || '-' %></td>
+            <td><%= l.leaveType || '-' %></td>
+            <td><%= l.reason || '-' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

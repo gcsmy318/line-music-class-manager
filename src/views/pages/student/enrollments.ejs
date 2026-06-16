@@ -1,0 +1,135 @@
+<%- include('../../partials/header', { title, user }) %>
+<%
+  semesters = typeof semesters !== 'undefined' ? semesters : [];
+  selectedSemesterId = typeof selectedSemesterId !== 'undefined' ? selectedSemesterId : '';
+  courses = typeof courses !== 'undefined' ? courses : [];
+  enrollments = typeof enrollments !== 'undefined' ? enrollments : [];
+  enrolledCourseIds = typeof enrolledCourseIds !== 'undefined' ? enrolledCourseIds : [];
+  enrolledCourseGroups = typeof enrolledCourseGroups !== 'undefined' ? enrolledCourseGroups : [];
+%>
+<div class="page-head">
+  <div>
+    <h1>ลงทะเบียนรายวิชา</h1>
+    <p>เลือกภาคการศึกษา แล้วเลือกรายวิชา/กลุ่มที่ต้องการลงทะเบียน</p>
+  </div>
+</div>
+
+<form method="GET" action="/student/enrollments" class="filter-box">
+  <div>
+    <label>ภาคการศึกษา</label>
+    <select name="semesterId" required>
+      <option value="">-- เลือกภาคการศึกษา --</option>
+      <% semesters.forEach(s => { %>
+        <option value="<%= s.semesterId || s.id %>"
+          <%= selectedSemesterId === (s.semesterId || s.id) ? 'selected' : '' %>>
+          <%= s.name || s.semesterName || s.id %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <button type="submit">แสดงรายวิชา</button>
+</form>
+
+<div class="card">
+  <h2>รายวิชาที่เปิดให้ลงทะเบียน</h2>
+
+  <% if (!selectedSemesterId) { %>
+    <p>กรุณาเลือกภาคการศึกษาก่อน</p>
+  <% } else if (courses.length === 0) { %>
+    <p>ยังไม่มีรายวิชาในภาคการศึกษานี้</p>
+  <% } else { %>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>รหัสวิชา</th>
+            <th>ชื่อวิชา</th>
+            <th>กลุ่ม</th>
+            <th>อาจารย์</th>
+            <th>สถานะ</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% courses.forEach(c => {
+            const already = enrolledCourseIds.includes(c.id) || enrolledCourseGroups.includes(c.courseGroupCode);
+            const myEnrollment = enrollments.find(e => e.courseId === c.id || e.courseGroupCode === c.courseGroupCode);
+          %>
+            <tr>
+              <td><%= c.courseCode || '-' %></td>
+              <td><%= c.courseName || '-' %></td>
+              <td><%= c.groupCode || '-' %></td>
+              <td><%= c.teacherName || '-' %></td>
+
+              <td>
+                <% if (myEnrollment) { %>
+                  <% if (myEnrollment.status === 'approved') { %>
+                    <span class="badge badge-approved">อนุมัติแล้ว</span>
+                  <% } else if (myEnrollment.status === 'pending') { %>
+                    <span class="badge badge-pending">รออนุมัติ</span>
+                  <% } else if (myEnrollment.status === 'rejected') { %>
+                    <span class="badge badge-rejected">ไม่อนุมัติ</span>
+                  <% } else { %>
+                    <span class="badge"><%= myEnrollment.status %></span>
+                  <% } %>
+                <% } else { %>
+                  <span class="badge">ยังไม่ลงทะเบียน</span>
+                <% } %>
+              </td>
+
+              <td>
+                <% if (already) { %>
+                  -
+                <% } else { %>
+                  <form method="POST" action="/student/enrollments">
+                    <input type="hidden" name="semesterId" value="<%= selectedSemesterId %>">
+                    <input type="hidden" name="courseId" value="<%= c.id %>">
+                    <button type="submit">ลงทะเบียน</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<div class="card">
+  <h2>ประวัติการลงทะเบียนของฉัน</h2>
+
+  <% if (enrollments.length === 0) { %>
+    <p>ยังไม่มีประวัติการลงทะเบียน</p>
+  <% } else { %>
+    <table>
+      <thead>
+        <tr>
+          <th>ภาคเรียน</th>
+          <th>รหัสวิชา</th>
+          <th>ชื่อวิชา</th>
+          <th>กลุ่ม</th>
+          <th>อาจารย์</th>
+          <th>สถานะ</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% enrollments.forEach(e => { %>
+          <tr>
+            <td><%= e.semesterId || '-' %></td>
+            <td><%= e.courseCode || '-' %></td>
+            <td><%= e.courseName || '-' %></td>
+            <td><%= e.groupCode || '-' %></td>
+            <td><%= e.teacherName || '-' %></td>
+            <td><%= e.status || '-' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

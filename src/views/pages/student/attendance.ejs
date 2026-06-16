@@ -1,0 +1,133 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<%
+  semesters = typeof semesters !== 'undefined' ? semesters : [];
+  enrollments = typeof enrollments !== 'undefined' ? enrollments : [];
+  records = typeof records !== 'undefined' ? records : [];
+  summary = typeof summary !== 'undefined' ? summary : {
+    present: 0,
+    late: 0,
+    absent: 0,
+    leave: 0,
+    total: 0
+  };
+  selectedSemesterId = typeof selectedSemesterId !== 'undefined' ? selectedSemesterId : '';
+  selectedCourseGroupCode = typeof selectedCourseGroupCode !== 'undefined' ? selectedCourseGroupCode : '';
+%>
+
+<div class="page-head">
+  <div>
+    <h1>การเข้าเรียนของฉัน</h1>
+    <p>ดูข้อมูลการเข้าเรียนและการลาเรียนแยกตามภาคเรียนและรายวิชา</p>
+  </div>
+</div>
+
+<form method="GET" action="/student/attendance" class="filter-box">
+  <div>
+    <label>ภาคการศึกษา</label>
+    <select name="semesterId" required>
+      <option value="">-- เลือกภาคการศึกษา --</option>
+      <% semesters.forEach(s => { %>
+        <option value="<%= s.semesterId || s.id %>"
+          <%= selectedSemesterId === (s.semesterId || s.id) ? 'selected' : '' %>>
+          <%= s.name || s.semesterName || s.id %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
+    <label>รายวิชา / กลุ่ม</label>
+    <select name="courseGroupCode">
+      <option value="">ทั้งหมด</option>
+      <% enrollments.forEach(e => { %>
+        <option value="<%= e.courseGroupCode %>"
+          <%= selectedCourseGroupCode === e.courseGroupCode ? 'selected' : '' %>>
+          <%= e.courseCode %> <%= e.courseName %> กลุ่ม <%= e.groupCode %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <button type="submit">ค้นหา</button>
+</form>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <span>✅</span>
+    <p>มาเรียน</p>
+    <strong><%= summary.present %></strong>
+  </div>
+
+  <div class="stat-card warning">
+    <span>⏰</span>
+    <p>มาสาย</p>
+    <strong><%= summary.late %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>❌</span>
+    <p>ขาดเรียน</p>
+    <strong><%= summary.absent %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>🏥</span>
+    <p>ลาเรียน</p>
+    <strong><%= summary.leave %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>📊</span>
+    <p>รวมรายการ</p>
+    <strong><%= summary.total %></strong>
+  </div>
+</div>
+
+<div class="card">
+  <h2>ประวัติการเข้าเรียน / การลา</h2>
+
+  <% if (!selectedSemesterId) { %>
+    <p>กรุณาเลือกภาคการศึกษาก่อน</p>
+  <% } else if (records.length === 0) { %>
+    <p>ยังไม่มีข้อมูลในเงื่อนไขที่เลือก</p>
+  <% } else { %>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>วันที่</th>
+            <th>ประเภท</th>
+            <th>รายวิชา</th>
+            <th>กลุ่ม</th>
+            <th>สถานะ</th>
+            <th>หมายเหตุ</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% records.forEach(r => { %>
+            <tr>
+              <td><%= r.date || '-' %></td>
+
+              <td>
+                <% if (r.type === 'leave') { %>
+                  ลาเรียน
+                <% } else { %>
+                  เข้าเรียน
+                <% } %>
+              </td>
+
+              <td><%= r.courseCode || '-' %> <%= r.courseName || '' %></td>
+              <td><%= r.groupCode || '-' %></td>
+              <td><%= r.status || '-' %></td>
+              <td><%= r.note || r.reason || '-' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

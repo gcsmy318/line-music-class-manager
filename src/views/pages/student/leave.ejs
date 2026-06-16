@@ -1,0 +1,105 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<%
+  semesters = typeof semesters !== 'undefined' ? semesters : [];
+  selectedSemesterId = typeof selectedSemesterId !== 'undefined' ? selectedSemesterId : '';
+  enrollments = typeof enrollments !== 'undefined' ? enrollments : [];
+  leaves = typeof leaves !== 'undefined' ? leaves : [];
+%>
+
+
+
+<div class="page-head">
+  <div>
+    <h1>ลาเรียน</h1>
+    <p>เลือกภาคการศึกษาและรายวิชาที่ต้องการลา</p>
+  </div>
+</div>
+
+<form method="GET" action="/student/leave" class="filter-box">
+  <div>
+    <label>ภาคการศึกษา</label>
+    <select name="semesterId" required>
+      <option value="">-- เลือกภาคการศึกษา --</option>
+      <% semesters.forEach(s => { %>
+        <option value="<%= s.semesterId || s.id %>"
+          <%= selectedSemesterId === (s.semesterId || s.id) ? 'selected' : '' %>>
+          <%= s.name || s.semesterName || s.id %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <button type="submit">แสดงรายวิชา</button>
+</form>
+
+<div class="card">
+  <h2>แจ้งลาเรียน</h2>
+
+  <% if (!selectedSemesterId) { %>
+    <p>กรุณาเลือกภาคการศึกษาก่อน</p>
+  <% } else if (enrollments.length === 0) { %>
+    <p>ยังไม่มีรายวิชาที่อนุมัติในภาคการศึกษานี้</p>
+  <% } else { %>
+    <form method="POST" action="/student/leave">
+      <input type="hidden" name="semesterId" value="<%= selectedSemesterId %>">
+
+      <label>รายวิชา / กลุ่ม</label>
+      <select name="enrollmentId" required>
+        <% enrollments.forEach(e => { %>
+          <option value="<%= e.id %>">
+            <%= e.courseCode %> <%= e.courseName %> กลุ่ม <%= e.groupCode %>
+          </option>
+        <% }) %>
+      </select>
+
+      <label>วันที่ลา</label>
+      <input type="date" name="leaveDate" required>
+
+      <label>ประเภทการลา</label>
+      <select name="leaveType" required>
+        <option value="ลาป่วย">ลาป่วย</option>
+        <option value="ลากิจ">ลากิจ</option>
+        <option value="ลากิจกรรมมหาวิทยาลัย">ลากิจกรรมมหาวิทยาลัย</option>
+      </select>
+
+      <label>เหตุผล</label>
+      <textarea name="reason" required></textarea>
+
+      <button type="submit">บันทึกการลา</button>
+    </form>
+  <% } %>
+</div>
+
+<div class="card">
+  <h2>ประวัติการลา</h2>
+
+  <% if (leaves.length === 0) { %>
+    <p>ยังไม่มีประวัติการลา</p>
+  <% } else { %>
+    <table>
+      <thead>
+        <tr>
+          <th>วันที่</th>
+          <th>รายวิชา</th>
+          <th>กลุ่ม</th>
+          <th>ประเภท</th>
+          <th>เหตุผล</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% leaves.forEach(l => { %>
+          <tr>
+            <td><%= l.leaveDate || '-' %></td>
+            <td><%= l.courseCode || '-' %> <%= l.courseName || '' %></td>
+            <td><%= l.groupCode || '-' %></td>
+            <td><%= l.leaveType || '-' %></td>
+            <td><%= l.reason || '-' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

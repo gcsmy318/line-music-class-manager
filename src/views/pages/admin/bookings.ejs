@@ -137,6 +137,20 @@
   <div class="summary-card">ยกเลิก <strong><%= summary.cancelled %></strong></div>
 </div>
 
+
+<div style="display:flex;gap:10px;margin-bottom:15px;">
+  <a class="btn" href="/admin/bookings">
+      ดูวันนี้
+  </a>
+  <a class="btn btn-reject" href="/admin/bookings?status=pending">
+      รออนุมัติทั้งหมด (<%= summary.allPending || 0 %>)
+  </a>
+  <a class="btn btn-cancel" href="/admin/bookings?mode=overdue">
+      ค้างอนุมัติย้อนหลัง (<%= summary.overduePending || 0 %>)
+  </a>
+
+</div>
+
 <form class="filter-box" method="GET" action="/admin/bookings">
   <div>
     <label>วันที่</label>
@@ -156,6 +170,7 @@
 
   <button class="btn" type="submit">ค้นหา</button>
 </form>
+
 
 <table class="booking-table">
   <thead>

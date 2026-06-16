@@ -1,0 +1,18 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="card">
+  <h2>ยืนยันใช้ห้องซ้อม</h2>
+
+  <p><strong>ห้อง:</strong> <%= booking.roomName %></p>
+  <p><strong>วันที่:</strong> <%= booking.bookingDate %></p>
+  <p><strong>เวลา:</strong> <%= booking.startTime %> - <%= booking.endTime %></p>
+  <p><strong>ผู้จอง:</strong> <%= booking.studentName %></p>
+
+  <form method="POST" action="/room-confirm/scan/<%= booking.id %>">
+    <label>กรอกรหัสนิสิตเพื่อยืนยัน</label>
+    <input type="text" name="studentId" required>
+    <button type="submit">ยืนยันเข้าใช้ห้อง</button>
+  </form>
+</div>
+
+<%- include('../../partials/footer') %>

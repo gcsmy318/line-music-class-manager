@@ -1,0 +1,116 @@
+<%- include('../../partials/header', { title, user }) %>
+<%
+  semesters = typeof semesters !== 'undefined' ? semesters : [];
+  courses = typeof courses !== 'undefined' ? courses : [];
+  courseCodes = typeof courseCodes !== 'undefined' ? courseCodes : [];
+  groupCodes = typeof groupCodes !== 'undefined' ? groupCodes : [];
+  submissions = typeof submissions !== 'undefined' ? submissions : [];
+  filters = typeof filters !== 'undefined' ? filters : {};
+%>
+<div class="page-head">
+  <div>
+    <h1>ตรวจงาน</h1>
+    <p>กรองตามภาคการศึกษา รายวิชา กลุ่ม และสถานะ</p>
+  </div>
+</div>
+
+<form method="GET" action="/teacher/submissions" class="filter-box">
+  <div>
+    <label>ภาคการศึกษา</label>
+    <select name="semesterId">
+      <option value="">ทั้งหมด</option>
+      <% semesters.forEach(s => { %>
+        <option value="<%= s.semesterId || s.id %>"
+          <%= filters.semesterId === (s.semesterId || s.id) ? 'selected' : '' %>>
+          <%= s.name || s.semesterName || s.id %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
+    <label>รายวิชา</label>
+    <select name="courseCode">
+      <option value="">ทั้งหมด</option>
+      <% courseCodes.forEach(code => { %>
+        <option value="<%= code %>" <%= filters.courseCode === code ? 'selected' : '' %>>
+          <%= code %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
+    <label>กลุ่ม</label>
+    <select name="groupCode">
+      <option value="">ทั้งหมด</option>
+      <% groupCodes.forEach(g => { %>
+        <option value="<%= g %>" <%= filters.groupCode === g ? 'selected' : '' %>>
+          <%= g %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
+    <label>สถานะ</label>
+    <select name="status">
+      <option value="">ทั้งหมด</option>
+      <option value="ยังไม่ตรวจ" <%= filters.status === 'ยังไม่ตรวจ' ? 'selected' : '' %>>ยังไม่ตรวจ</option>
+      <option value="ตรวจแล้ว" <%= filters.status === 'ตรวจแล้ว' ? 'selected' : '' %>>ตรวจแล้ว</option>
+      <option value="ต้องแก้ไข" <%= filters.status === 'ต้องแก้ไข' ? 'selected' : '' %>>ต้องแก้ไข</option>
+    </select>
+  </div>
+
+  <button type="submit">ค้นหา</button>
+</form>
+
+<div class="card">
+  <h2>รายการส่งงาน</h2>
+
+  <% if (submissions.length === 0) { %>
+    <p>ไม่พบรายการส่งงาน</p>
+  <% } else { %>
+    <div class="submission-list">
+      <% submissions.forEach(s => { %>
+        <div class="submission-card">
+          <div class="submission-info">
+            <h3><%= s.studentName || '-' %></h3>
+            <p><%= s.studentId || '-' %></p>
+            <p><strong><%= s.courseCode || '-' %></strong> <%= s.courseName || '' %></p>
+            <p>กลุ่ม <%= s.groupCode || '-' %></p>
+            <a href="<%= s.youtubeUrl %>" target="_blank" class="btn">เปิดคลิป</a>
+          </div>
+
+          <form method="POST" action="/teacher/submissions/<%= s.id %>/review" class="review-form">
+            <div class="form-row">
+              <div>
+                <label>คะแนน</label>
+                <input type="number" name="score" min="0" max="10" value="<%= s.score || '' %>">
+              </div>
+
+              <div>
+                <label>สถานะ</label>
+                <select name="status">
+                  <option value="ตรวจแล้ว" <%= s.status === 'ตรวจแล้ว' ? 'selected' : '' %>>ตรวจแล้ว</option>
+                  <option value="ต้องแก้ไข" <%= s.status === 'ต้องแก้ไข' ? 'selected' : '' %>>ต้องแก้ไข</option>
+                </select>
+              </div>
+            </div>
+
+            <label>Feedback</label>
+            <textarea name="feedback" rows="2"><%= s.feedback || '' %></textarea>
+
+            <label>ข้อเสนอแนะ</label>
+            <textarea name="suggestion" rows="2"><%= s.suggestion || '' %></textarea>
+
+            <button type="submit">บันทึก</button>
+          </form>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>
+

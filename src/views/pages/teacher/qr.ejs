@@ -1,0 +1,90 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="card">
+  <h2>สร้าง QR Code เช็คชื่อ</h2>
+
+  <form method="POST" action="/teacher/qr">
+    <label>เลือกรายวิชา</label>
+    <select name="courseId" required>
+      <% courses.forEach(c => { %>
+        <option value="<%= c.id %>">
+          <%= c.courseCode %> <%= c.courseName %> กลุ่ม <%= c.groupCode %>
+        </option>
+      <% }) %>
+    </select>
+
+    <label>พิกัดห้องเรียน</label>
+
+    <button type="button" onclick="getCurrentLocation()" style="margin-bottom:10px;">
+      📍 ใช้ตำแหน่งปัจจุบันของครู
+    </button>
+
+    <label>ละติจูดห้องเรียน</label>
+    <input id="classLatitude" type="number" step="any" name="classLatitude" required>
+
+    <label>ลองจิจูดห้องเรียน</label>
+    <input id="classLongitude" type="number" step="any" name="classLongitude" required>
+
+    <p id="locationStatus" style="color:#64748b;"></p>
+
+    <button type="submit">สร้าง QR Code</button>
+  </form>
+</div>
+
+<% if (qrData) { %>
+  <div class="card" style="text-align:center;">
+    <h2>QR Code สำหรับเช็คชื่อ</h2>
+    <p>
+      <%= qrData.course.courseCode %>
+      <%= qrData.course.courseName %>
+      กลุ่ม <%= qrData.course.groupCode %>
+    </p>
+
+    <img src="<%= qrData.qrImage %>" style="max-width:300px;width:100%;">
+
+    <p>
+      <a href="<%= qrData.url %>" target="_blank"><%= qrData.url %></a>
+    </p>
+
+    <p>หมดอายุใน 30 นาที</p>
+  </div>
+<% } %>
+
+<script>
+function getCurrentLocation() {
+  const status = document.getElementById('locationStatus');
+
+  if (!navigator.geolocation) {
+    status.innerText = 'อุปกรณ์นี้ไม่รองรับ GPS';
+    return;
+  }
+
+  status.innerText = 'กำลังค้นหาตำแหน่ง...';
+
+  navigator.geolocation.getCurrentPosition(
+    function(position) {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+
+      document.getElementById('classLatitude').value = lat;
+      document.getElementById('classLongitude').value = lng;
+
+      status.innerText =
+        'ได้ตำแหน่งแล้ว ความแม่นยำประมาณ ' +
+        Math.round(accuracy) +
+        ' เมตร';
+    },
+    function(error) {
+      status.innerText = 'ไม่สามารถอ่านตำแหน่งได้ กรุณาอนุญาต GPS ใน Browser';
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
+}
+</script>
+
+<%- include('../../partials/footer') %>

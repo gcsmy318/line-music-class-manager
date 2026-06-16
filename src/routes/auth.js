@@ -13,7 +13,16 @@ router.post('/login', async (req,res)=>{
   const doc=snap.docs[0]; const user={id:doc.id,...doc.data()};
   if(user.status !== 'approved'){ req.flash('error','บัญชียังไม่อนุมัติ'); return res.redirect('/login'); }
   if(!await comparePassword(password, user.passwordHash || '')){ req.flash('error','รหัสผ่านไม่ถูกต้อง'); return res.redirect('/login'); }
-  req.session.user={id:user.id, name:user.name, email:user.email, role:user.role, lineUserId:user.lineUserId};
+  req.session.user = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    lineUserId: user.lineUserId || '',
+    studentId: user.studentId || user.id,
+    teacherId: user.teacherId || user.id,
+    staffId: user.staffId || user.id
+  };
   res.redirect('/dashboard');
 });
 router.post('/logout',(req,res)=>req.session.destroy(()=>res.redirect('/login')));

@@ -57,11 +57,18 @@ app.use('/admin/bookings', require('./routes/adminBookings'));
 app.use('/admin', require('./routes/adminHome'));
 app.use('/admin', require('./routes/crud'));
 
+
+app.use('/student', require('./routes/student'));
+app.use('/teacher', require('./routes/teacher'));
+app.use('/room-confirm', require('./routes/roomConfirm'));
+
+
 app.use('/booking', require('./routes/booking'));
 app.use('/checkin', require('./routes/checkin'));
 app.use('/import', require('./routes/import'));
 app.use('/reports', require('./routes/reports'));
 app.use('/room-usage', require('./routes/roomUsage'));
+
 
 app.use('/', require('./routes/lineWebhook'));
 

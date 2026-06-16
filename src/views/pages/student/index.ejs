@@ -1,0 +1,25 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="page-head">
+  <div>
+    <h1>ข้อมูลของฉัน</h1>
+    <p>สรุปข้อมูลการเรียน การส่งงาน การลา และการจองห้อง</p>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card"><span>📚</span><p>รายวิชา</p><strong><%= stats.enrollments %></strong></div>
+  <div class="stat-card"><span>✅</span><p>เข้าเรียน</p><strong><%= stats.attendance %></strong></div>
+  <div class="stat-card"><span>🎬</span><p>ส่งงาน</p><strong><%= stats.submissions %></strong></div>
+  <div class="stat-card"><span>🏥</span><p>ลาเรียน</p><strong><%= stats.leaves %></strong></div>
+  <div class="stat-card"><span>🎹</span><p>จองห้อง</p><strong><%= stats.bookings %></strong></div>
+</div>
+
+<!-- <div class="quick-grid" style="margin-top:24px;">
+  <a class="quick-card" href="/student/enrollments">📚 ลงทะเบียนรายวิชา</a>
+  <a class="quick-card" href="/student/leave">🏥 ลาเรียน</a>
+  <a class="quick-card" href="/student/submissions">🎬 ส่งงาน</a>
+  <a class="quick-card" href="/booking">🎹 จองห้องซ้อม</a>
+</div> -->
+
+<%- include('../../partials/footer') %>

@@ -1,5 +1,6 @@
 const express = require('express');
 const { db } = require('../config/firebase');
+
 const router = express.Router();
 
 function requireLogin(req, res, next) {
@@ -8,8 +9,8 @@ function requireLogin(req, res, next) {
 }
 
 const timeSlots = [
-  '08:00','09:00','10:00','11:00','12:00',
-  '13:00','14:00','15:00','16:00','17:00','18:00'
+  '08:00', '09:00', '10:00', '11:00', '12:00',
+  '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'
 ];
 
 function addOneHour(time) {
@@ -18,49 +19,105 @@ function addOneHour(time) {
 }
 
 router.get('/', requireLogin, async (req, res) => {
-  const selectedDate = req.query.date || new Date().toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  const selectedDate = req.query.date || today;
 
   const roomsSnap = await db.collection('rooms')
     .where('status', '==', 'active')
     .get();
 
-  let rooms = roomsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  let rooms = roomsSnap.docs.map(d => ({
+    id: d.id,
+    ...d.data()
+  }));
 
-    rooms = rooms
-      .filter(room => !room.qrOnly)
-      .sort((a, b) => {
-        const order = {
-          piano: 1,
-          vocal: 2
-        };
+  rooms = rooms
+    .filter(room => !room.qrOnly)
+    .sort((a, b) => {
+      const order = {
+        piano: 1,
+        vocal: 2
+      };
 
-        const typeA = order[a.roomType] || 99;
-        const typeB = order[b.roomType] || 99;
+      const typeA = order[a.roomType] || 99;
+      const typeB = order[b.roomType] || 99;
 
-        if (typeA !== typeB) return typeA - typeB;
+      if (typeA !== typeB) return typeA - typeB;
 
-        return Number(a.roomNo || 999) - Number(b.roomNo || 999);
-  });
+      return Number(a.roomNo || 999) - Number(b.roomNo || 999);
+    });
 
   const bookingSnap = await db.collection('bookings')
     .where('bookingDate', '==', selectedDate)
     .where('status', 'in', ['pending', 'approved'])
     .get();
 
-  const bookings = bookingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const bookings = bookingSnap.docs.map(d => ({
+    id: d.id,
+    ...d.data()
+  }));
+
+  const studentId = req.session.user.studentId || req.session.user.id;
 
   const mySnap = await db.collection('bookings')
-    .where('studentId', '==', req.session.user.id)
+    .where('studentId', '==', studentId)
     .get();
 
-  const myBookings = mySnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const myBookings = mySnap.docs
+    .map(d => ({
+      id: d.id,
+      ...d.data()
+    }))
+    .sort((a, b) => {
+      if ((b.bookingDate || '') !== (a.bookingDate || '')) {
+        return (b.bookingDate || '').localeCompare(a.bookingDate || '');
+      }
+
+      return (b.startTime || '').localeCompare(a.startTime || '');
+    });
+
+  const pendingSnap = await db.collection('bookings')
+    .where('status', '==', 'pending')
+    .get();
+
+  const pendingBookings = pendingSnap.docs
+    .map(d => ({
+      id: d.id,
+      ...d.data()
+    }))
+    .sort((a, b) => {
+      if ((a.bookingDate || '') !== (b.bookingDate || '')) {
+        return (a.bookingDate || '').localeCompare(b.bookingDate || '');
+      }
+
+      return (a.startTime || '').localeCompare(b.startTime || '');
+    });
+
+  const pastPendingBookings = pendingBookings.filter(
+    b => b.bookingDate && b.bookingDate < today
+  );
+
+  const todayPendingBookings = pendingBookings.filter(
+    b => b.bookingDate === today
+  );
+
+  const futurePendingBookings = pendingBookings.filter(
+    b => b.bookingDate && b.bookingDate > today
+  );
 
   res.render('pages/booking/index', {
     title: 'จองห้อง',
     user: req.session.user,
+
     rooms,
     bookings,
     myBookings,
+
+    pendingBookings,
+    pastPendingBookings,
+    todayPendingBookings,
+    futurePendingBookings,
+
     timeSlots,
     selectedDate
   });
@@ -95,8 +152,10 @@ router.post('/', requireLogin, async (req, res) => {
   const roomDoc = await db.collection('rooms').doc(roomId).get();
   const room = roomDoc.exists ? roomDoc.data() : {};
 
+  const studentId = req.session.user.studentId || req.session.user.id;
+
   await db.collection('bookings').add({
-    studentId: req.session.user.id,
+    studentId,
     studentName: req.session.user.name || '',
     roomId,
     roomName: room.roomName || '',
@@ -123,8 +182,9 @@ router.post('/:id/cancel', requireLogin, async (req, res) => {
   }
 
   const booking = bookingDoc.data();
+  const userId = req.session.user.studentId || req.session.user.id;
 
-  if (booking.studentId !== req.session.user.id && booking.userId !== req.session.user.id) {
+  if (booking.studentId !== userId && booking.userId !== userId) {
     req.flash('error', 'คุณไม่มีสิทธิ์จัดการรายการนี้');
     return res.redirect('/booking');
   }
@@ -138,7 +198,7 @@ router.post('/:id/cancel', requireLogin, async (req, res) => {
   await bookingRef.set({
     status: 'cancelled',
     cancelledAt: new Date().toISOString(),
-    cancelledBy: req.session.user.id
+    cancelledBy: userId
   }, { merge: true });
 
   req.flash('success', 'ยกเลิกการจองแล้ว');
@@ -146,11 +206,14 @@ router.post('/:id/cancel', requireLogin, async (req, res) => {
 });
 
 router.post('/:id/approve', requireLogin, async (req, res) => {
-  if (!['admin', 'staff'].includes(req.session.user.role)) return res.redirect('/dashboard');
+  if (!['admin', 'staff'].includes(req.session.user.role)) {
+    return res.redirect('/dashboard');
+  }
 
   await db.collection('bookings').doc(req.params.id).set({
     status: 'approved',
     approvedBy: req.session.user.id,
+    approvedByName: req.session.user.name || '',
     approvedAt: new Date().toISOString()
   }, { merge: true });
 
@@ -159,11 +222,14 @@ router.post('/:id/approve', requireLogin, async (req, res) => {
 });
 
 router.post('/:id/reject', requireLogin, async (req, res) => {
-  if (!['admin', 'staff'].includes(req.session.user.role)) return res.redirect('/dashboard');
+  if (!['admin', 'staff'].includes(req.session.user.role)) {
+    return res.redirect('/dashboard');
+  }
 
   await db.collection('bookings').doc(req.params.id).set({
     status: 'rejected',
     rejectedBy: req.session.user.id,
+    rejectedByName: req.session.user.name || '',
     rejectedAt: new Date().toISOString()
   }, { merge: true });
 

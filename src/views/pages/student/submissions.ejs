@@ -1,0 +1,104 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="page-head">
+  <div>
+    <h1>ส่งงาน</h1>
+    <p>เลือกภาคการศึกษาและรายวิชาที่ต้องการส่งงาน</p>
+  </div>
+</div>
+
+
+<form method="GET" action="/student/submissions" class="filter-box">
+  <div>
+    <label>ภาคการศึกษา</label>
+    <select name="semesterId" required>
+      <option value="">-- เลือกภาคการศึกษา --</option>
+      <% semesters.forEach(s => { %>
+        <option value="<%= s.semesterId || s.id %>"
+          <%= selectedSemesterId === (s.semesterId || s.id) ? 'selected' : '' %>>
+          <%= s.name || s.semesterName || s.id %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <button type="submit">แสดงรายวิชา</button>
+</form>
+
+
+<div class="card">
+  <h2>ส่งงานใหม่</h2>
+
+  <% if (!selectedSemesterId) { %>
+    <p>กรุณาเลือกภาคการศึกษาก่อนส่งงาน</p>
+  <% } else if (enrollments.length === 0) { %>
+    <p>ยังไม่มีรายวิชาที่อนุมัติในภาคการศึกษานี้</p>
+  <% } else { %>
+    <form method="POST" action="/student/submissions">
+      <input type="hidden" name="semesterId" value="<%= selectedSemesterId %>">
+
+      <label>รายวิชา / กลุ่ม</label>
+      <select name="enrollmentId" required>
+        <% enrollments.forEach(e => { %>
+          <option value="<%= e.id %>">
+            <%= e.courseCode %> <%= e.courseName %> กลุ่ม <%= e.groupCode %>
+          </option>
+        <% }) %>
+      </select>
+
+      <label>ลิงก์ YouTube</label>
+      <input type="url" name="youtubeUrl" placeholder="https://youtube.com/..." required>
+
+      <label>หมายเหตุ</label>
+      <textarea name="note"></textarea>
+
+      <button type="submit">ส่งงาน</button>
+    </form>
+  <% } %>
+</div>
+
+<div class="card">
+  <h2>ประวัติส่งงาน</h2>
+
+  <% if (submissions.length === 0) { %>
+    <p>ยังไม่มีประวัติส่งงาน</p>
+  <% } else { %>
+    <table>
+      <thead>
+        <tr>
+          <th>วันที่</th>
+          <th>รายวิชา</th>
+          <th>กลุ่ม</th>
+          <th>ลิงก์</th>
+          <th>คะแนน</th>
+          <th>สถานะ</th>
+          <th>Feedback</th>
+
+        </tr>
+      </thead>
+
+      <tbody>
+        <% submissions.forEach(s => { %>
+          <tr>
+            <td><%= s.submitDate || '-' %></td>
+            <td><%= s.courseCode || '-' %> <%= s.courseName || '' %></td>
+            <td><%= s.groupCode || '-' %></td>
+            <td>
+              <% if (s.youtubeUrl) { %>
+                <a href="<%= s.youtubeUrl %>" target="_blank">เปิดคลิป</a>
+              <% } else { %>
+                -
+              <% } %>
+            </td>
+            <td><%= s.score || '-' %></td>
+            <td><%= s.status || '-' %></td>
+            <td><%= s.feedback || '-' %></td>
+
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

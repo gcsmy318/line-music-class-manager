@@ -1,5 +1,6 @@
 const express = require('express');
 const { db } = require('../config/firebase');
+
 const router = express.Router();
 
 function requireLogin(req, res, next) {
@@ -12,19 +13,15 @@ async function countCollection(name) {
   return snap.size;
 }
 
-async function safeCount(query) {
-  try {
-    const snap = await query.get();
-    return snap.size;
-  } catch (e) {
-    return 0;
-  }
+async function countQuery(query) {
+  const snap = await query.get();
+  return snap.size;
 }
 
 router.get('/', requireLogin, async (req, res) => {
-  const today = new Date().toISOString().slice(0, 10);
   const user = req.session.user;
   const role = user.role;
+  const today = new Date().toISOString().slice(0, 10);
 
   let stats = {};
 
@@ -33,63 +30,73 @@ router.get('/', requireLogin, async (req, res) => {
       users,
       students,
       teachers,
+      staff,
       courses,
+      semesters,
       rooms,
+      bookings,
       pendingUsers,
+      pendingBookings,
       todayAttendance,
-      todaySubmissions,
-      todayBookings,
-      pendingBookings
+      todaySubmissions
     ] = await Promise.all([
       countCollection('users'),
       countCollection('students'),
-      countCollection('teachers'),
+      countQuery(db.collection('users').where('role', '==', 'teacher')),
+      countQuery(db.collection('users').where('role', '==', 'staff')),
       countCollection('courses'),
+      countCollection('semesters'),
       countCollection('rooms'),
-      safeCount(db.collection('users').where('status', '==', 'pending')),
-      safeCount(db.collection('attendance').where('checkDate', '==', today)),
-      safeCount(db.collection('submissions').where('submitDate', '==', today)),
-      safeCount(db.collection('bookings').where('bookingDate', '==', today)),
-      safeCount(db.collection('bookings').where('status', '==', 'pending'))
+      countCollection('bookings'),
+      countQuery(db.collection('users').where('status', '==', 'pending')),
+      countQuery(db.collection('bookings').where('status', '==', 'pending')),
+      countQuery(db.collection('attendance').where('checkDate', '==', today)),
+      countQuery(db.collection('submissions').where('submitDate', '==', today))
     ]);
 
     stats = {
       users,
       students,
       teachers,
+      staff,
       courses,
+      semesters,
       rooms,
+      bookings,
       pendingUsers,
+      pendingBookings,
       todayAttendance,
-      todaySubmissions,
-      todayBookings,
-      pendingBookings
-    };
-  }
-
-  if (role === 'teacher') {
-    stats = {
-      courses: await safeCount(db.collection('courses').where('teacherId', '==', user.id)),
-      todayAttendance: await safeCount(db.collection('attendance').where('teacherId', '==', user.id).where('checkDate', '==', today)),
-      todaySubmissions: await safeCount(db.collection('submissions').where('teacherId', '==', user.id).where('submitDate', '==', today)),
-      pendingSubmissions: await safeCount(db.collection('submissions').where('teacherId', '==', user.id).where('status', '==', 'ยังไม่ตรวจ'))
+      todaySubmissions
     };
   }
 
   if (role === 'staff') {
-    stats = {
-      rooms: await countCollection('rooms'),
-      todayBookings: await safeCount(db.collection('bookings').where('bookingDate', '==', today)),
-      pendingBookings: await safeCount(db.collection('bookings').where('status', '==', 'pending'))
-    };
-  }
+    const [
+      rooms,
+      allBookings,
+      todayBookings,
+      futureBookings,
+      pendingBookings,
+      approvedBookings,
+      roomUsage
+    ] = await Promise.all([
+      countCollection('rooms'),
+      countCollection('bookings'),
+      countQuery(db.collection('bookings').where('bookingDate', '==', today)),
+      countQuery(db.collection('bookings').where('bookingDate', '>', today)),
+      countQuery(db.collection('bookings').where('status', '==', 'pending')),
+      countQuery(db.collection('bookings').where('status', '==', 'approved')),
+      countCollection('room_usage_logs')
+    ]);
 
-  if (role === 'student') {
     stats = {
-      myCourses: await safeCount(db.collection('enrollments').where('studentId', '==', user.id)),
-      myAttendance: await safeCount(db.collection('attendance').where('studentId', '==', user.id)),
-      mySubmissions: await safeCount(db.collection('submissions').where('studentId', '==', user.id)),
-      myBookings: await safeCount(db.collection('bookings').where('studentId', '==', user.id))
+      rooms,
+      allBookings,
+      todayBookings,
+      futureBookings,
+      pendingBookings,
+      approvedBookings,
+      roomUsage
     };
   }
 

@@ -380,3 +380,91 @@ button:hover,
     align-items: stretch;
   }
 }
+
+.submission-list {
+  display: grid;
+  gap: 16px;
+}
+
+.submission-card {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.submission-info h3 {
+  margin: 0 0 4px;
+}
+
+.submission-info p {
+  margin: 4px 0;
+  color: #475569;
+}
+
+.review-form {
+  display: grid;
+  gap: 10px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 800px) {
+  .submission-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.booking-table th,
+.booking-table td {
+  min-width: 110px;
+  text-align: center;
+}
+
+.booking-table td:first-child,
+.booking-table th:first-child {
+  min-width: 180px;
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 1;
+}
+
+.booking-cell.available {
+  background: #dcfce7;
+}
+
+.booking-cell.pending {
+  background: #fef3c7;
+}
+
+.booking-cell.approved {
+  background: #fee2e2;
+}
+
+.booking-cell form {
+  margin: 0;
+}
+
+.booking-cell button {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.dashboard-section {
+  margin-top: 28px;
+}
+
+.dashboard-section h2 {
+  margin-bottom: 14px;
+  font-size: 20px;
+}

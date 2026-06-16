@@ -19,35 +19,73 @@
     </div>
 
 <nav class="sidebar-menu">
-  <a href="/dashboard">🏠 หน้าหลัก</a>
+<!--   <a href="/dashboard">🏠 หน้าหลัก</a> -->
 
   <% if (user && user.role === 'student') { %>
+     <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/student">👨‍🎓 ข้อมูลของฉัน</a>
+    <a href="/student/enrollments">📚 ลงทะเบียนรายวิชา</a>
+    <a href="/student/attendance">✅ การเข้าเรียนของฉัน</a>
+    <a href="/student/leave">🏥 ลาเรียน</a>
+    <a href="/student/submissions">🎬 ส่งงาน</a>
     <a href="/booking">🎹 จองห้องซ้อม</a>
-
   <% } %>
 
   <% if (user && user.role === 'teacher') { %>
-    <a href="/admin/crud/courses">📚 รายวิชาของฉัน</a>
-    <a href="/admin/crud/attendance">✅ การเข้าเรียน</a>
-    <a href="/admin/crud/submissions">🎬 ตรวจงาน</a>
-    <a href="/reports">📊 รายงาน</a>
+
+   <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/teacher/enrollments">✅ อนุมัติลงทะเบียนรายวิชา</a>
+    <a href="/teacher/attendance">✅ ตรวจสอบการเข้าเรียน</a>
+    <a href="/teacher/leaves">🏥 ตรวจสอบการลาเรียน</a>
+    <a href="/teacher/submissions">🎬 ตรวจงาน </a>
+    <a href="/teacher/qr">🔳 สร้าง QR เช็คชื่อ</a>
+
+    <a href="/reports">📊 รายงาน</a> <!--  ยังไม่เสร็จ -->
+    <!-- <a href="/admin/crud/submissions">🎬 ตรวจงาน</a> -->
+
+
   <% } %>
 
+
   <% if (user && user.role === 'staff') { %>
-    <a href="/admin/bookings">📋 จัดการจองห้อง</a>
-    <a href="/admin/crud/rooms">🎹 ห้องและทรัพยากร</a>
-    <a href="/admin/crud/room_usage_logs">🏫 ประวัติใช้ห้อง</a>
-    <a href="/reports">📊 รายงานการใช้ห้อง</a>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/admin/bookings?status=pending">📋 จัดการจองห้อง</a>
+    <a href="/room-confirm">✅ ยืนยันใช้ห้องซ้อม</a>
+    <a href="/booking">📋 ตารางห้องซ้อม</a>
+<!--     <a href="">🎹 ห้องและทรัพยากร x</a> -->
+    <a href="/reports/bookings">🏫 ประวัติใช้ห้อง</a>
+<!--     <a href="">📊 รายงานการใช้ห้อง x</a> -->
+
   <% } %>
 
   <% if (user && user.role === 'admin') { %>
-    <a href="/booking">🎹 จองห้องซ้อม</a>
-    <a href="/admin/bookings">📋 จัดการจองห้อง</a>
-    <a href="/admin">⚙️ จัดการข้อมูล</a>
-    <a href="/reports">📊 รายงาน</a>
-    <a href="/import/students">📥 นำเข้านิสิต</a>
-    <a href="/admin/register-json">🧾 ลงทะเบียนแทนด้วย JSON</a>
-  <% } %>
+
+      <a href="/dashboard">🏠 Dashboard</a>
+
+
+      <div class="menu-group">นำเข้าข้อมูล</div>
+
+      <a href="/import/students">📥 นำเข้านิสิต</a>
+
+
+      <div class="menu-group">รายงาน</div>
+
+      <a href="/reports">📊 Dashboard รายงาน</a>
+      <a href="/reports/attendance">📈 รายงานการเข้าเรียน</a>
+      <a href="/reports/submissions">📈 รายงานส่งงาน</a>
+      <a href="/reports/bookings">📈 รายงานห้องซ้อม</a>
+
+      <!-- เครื่องมือ -->
+      <div class="menu-group">เครื่องมือ</div>
+
+      <a href="/admin/register-json">🧾 ลงทะเบียนด้วย JSON</a>
+      <a href="/admin">⚙️ Collections</a>
+
+    <% } %>
+
+
+
+
 </nav>
 
     <% if(user){ %>
