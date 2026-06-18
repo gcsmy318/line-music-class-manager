@@ -110,16 +110,16 @@ router.post('/:token', requireLogin, async (req, res) => {
     latitude: lat,
     longitude: lng,
     distance: dist,
-    locationStatus: dist <= 50 ? 'ในพื้นที่' : 'นอกพื้นที่',
+    locationStatus: dist <= 100 ? 'ในพื้นที่' : 'นอกพื้นที่',
 
-    note: dist <= 50 ? '' : 'เช็คชื่อนอกพื้นที่',
+    note: dist <= 100 ? '' : 'เช็คชื่อนอกพื้นที่',
 
     createdAt: now
   });
 
   res.render('pages/success', {
     title: 'เช็คชื่อสำเร็จ',
-    message: `บันทึกแล้ว (${dist.toFixed(0)} เมตร / ${dist <= 50 ? 'ในพื้นที่' : 'นอกพื้นที่'})`,
+    message: `บันทึกแล้ว (${dist.toFixed(0)} เมตร / ${dist <= 100 ? 'ในพื้นที่' : 'นอกพื้นที่'})`,
     user: req.session.user
   });
 });

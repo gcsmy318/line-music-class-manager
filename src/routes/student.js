@@ -3,6 +3,58 @@ const { db } = require('../config/firebase');
 
 const router = express.Router();
 
+const multer = require('multer');
+const sharp = require('sharp');
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+async function fileToSmallDataUrl(file) {
+  if (!file) return null;
+
+  if (file.mimetype.startsWith('image/')) {
+    let quality = 80;
+    let buffer = await sharp(file.buffer)
+      .resize({ width: 1000, withoutEnlargement: true })
+      .jpeg({ quality })
+      .toBuffer();
+
+    while (buffer.length > 50 * 1024 && quality > 20) {
+      quality -= 10;
+      buffer = await sharp(file.buffer)
+        .resize({ width: 900, withoutEnlargement: true })
+        .jpeg({ quality })
+        .toBuffer();
+    }
+
+    return {
+      attachmentName: file.originalname,
+      attachmentType: 'image/jpeg',
+      attachmentSize: buffer.length,
+      attachmentDataUrl: `data:image/jpeg;base64,${buffer.toString('base64')}`
+    };
+  }
+
+  if (file.mimetype === 'application/pdf') {
+    if (file.buffer.length > 50 * 1024) {
+      throw new Error('ไฟล์ PDF ต้องไม่เกิน 50KB');
+    }
+
+    return {
+      attachmentName: file.originalname,
+      attachmentType: file.mimetype,
+      attachmentSize: file.buffer.length,
+      attachmentDataUrl: `data:${file.mimetype};base64,${file.buffer.toString('base64')}`
+    };
+  }
+
+  throw new Error('รองรับเฉพาะรูปภาพหรือ PDF');
+}
+
+
+
 function requireStudent(req, res, next) {
   if (!req.session.user) return res.redirect('/login');
   if (!['student', 'admin'].includes(req.session.user.role)) {
@@ -156,7 +208,7 @@ console.log('LEAVE SEMESTERS DATA:', semestersSnap.docs.map(d => ({
   });
 });
 
-router.post('/leave', requireStudent, async (req, res) => {
+/*router.post('/leave', requireStudent, async (req, res) => {
   const studentId = getMyId(req);
   const { semesterId, enrollmentId, leaveType, reason, leaveDate } = req.body;
 
@@ -185,6 +237,57 @@ router.post('/leave', requireStudent, async (req, res) => {
     reason,
     leaveDate,
     status: 'recorded',
+    createdAt: new Date().toISOString()
+  });
+
+  req.flash('success', 'บันทึกการลาเรียบร้อยแล้ว');
+  res.redirect('/student/leave?semesterId=' + encodeURIComponent(semesterId || e.semesterId || ''));
+});*/
+
+router.post('/leave', requireStudent, upload.single('attachment'), async (req, res) => {
+  const studentId = getMyId(req);
+  const { semesterId, enrollmentId, leaveType, reason, leaveDate } = req.body;
+
+  const enrollDoc = await db.collection('enrollments').doc(enrollmentId).get();
+
+  if (!enrollDoc.exists) {
+    req.flash('error', 'ไม่พบรายวิชา');
+    return res.redirect('/student/leave');
+  }
+
+  const e = enrollDoc.data();
+
+  let attachment = null;
+
+  try {
+    attachment = await fileToSmallDataUrl(req.file);
+  } catch (err) {
+    req.flash('error', err.message);
+    return res.redirect('/student/leave?semesterId=' + encodeURIComponent(semesterId || e.semesterId || ''));
+  }
+
+  await db.collection('leave_requests').add({
+    studentId,
+    studentName: req.session.user.name || '',
+    enrollmentId,
+    courseId: e.courseId || '',
+    courseCode: e.courseCode || '',
+    courseName: e.courseName || '',
+    groupCode: e.groupCode || '',
+    courseGroupCode: e.courseGroupCode || '',
+    semesterId: semesterId || e.semesterId || '',
+    teacherId: e.teacherId || '',
+    teacherName: e.teacherName || '',
+    leaveType,
+    reason,
+    leaveDate,
+    status: 'recorded',
+
+    attachmentName: attachment?.attachmentName || '',
+    attachmentType: attachment?.attachmentType || '',
+    attachmentSize: attachment?.attachmentSize || 0,
+    attachmentDataUrl: attachment?.attachmentDataUrl || '',
+
     createdAt: new Date().toISOString()
   });
 
@@ -405,4 +508,160 @@ router.get('/attendance', requireStudent, async (req, res) => {
   });
 });
 
+router.get('/course-records', requireStudent, async (req, res) => {
+  const studentId = getMyId(req);
+  const selectedSemesterId = req.query.semesterId || '';
+
+  const semestersSnap = await db.collection('semesters').get();
+
+  let enrollQuery = db.collection('enrollments')
+    .where('studentId', '==', studentId)
+    .where('status', '==', 'approved');
+
+  if (selectedSemesterId) {
+    enrollQuery = enrollQuery.where('semesterId', '==', selectedSemesterId);
+  }
+
+  let attendanceQuery = db.collection('attendance')
+    .where('studentId', '==', studentId);
+
+  let leaveQuery = db.collection('leave_requests')
+    .where('studentId', '==', studentId);
+
+  if (selectedSemesterId) {
+    attendanceQuery = attendanceQuery.where('semesterId', '==', selectedSemesterId);
+    leaveQuery = leaveQuery.where('semesterId', '==', selectedSemesterId);
+  }
+
+  const [enrollSnap, attendanceSnap, leaveSnap] = await Promise.all([
+    enrollQuery.get(),
+    attendanceQuery.get(),
+    leaveQuery.get()
+  ]);
+
+  const courseMap = {};
+  const dateSet = new Set();
+  const cellMap = {};
+
+  enrollSnap.docs.forEach(doc => {
+    const e = doc.data();
+    const key = e.courseGroupCode || `${e.courseCode}-${e.groupCode}`;
+
+    courseMap[key] = {
+      courseKey: key,
+      courseCode: e.courseCode || '',
+      courseName: e.courseName || '',
+      groupCode: e.groupCode || '',
+      courseGroupCode: e.courseGroupCode || key
+    };
+  });
+
+  function ensureCell(courseKey, date) {
+    const key = `${courseKey}_${date}`;
+
+    if (!cellMap[key]) {
+      cellMap[key] = {
+        attendance: '',
+        leave: '',
+        note: '',
+        attachmentDataUrl: '',
+        attachmentType: ''
+      };
+    }
+
+    return cellMap[key];
+  }
+
+  attendanceSnap.docs.forEach(doc => {
+    const d = doc.data();
+    const date = d.checkDate || d.attendanceDate || '';
+    const courseKey = d.courseGroupCode || `${d.courseCode}-${d.groupCode}`;
+
+    if (!date || !courseKey) return;
+
+    dateSet.add(date);
+
+    if (!courseMap[courseKey]) {
+      courseMap[courseKey] = {
+        courseKey,
+        courseCode: d.courseCode || '',
+        courseName: d.courseName || '',
+        groupCode: d.groupCode || '',
+        courseGroupCode: courseKey
+      };
+    }
+
+    const cell = ensureCell(courseKey, date);
+    cell.attendance = d.attendanceStatus || d.status || 'มาเรียน';
+    cell.note = d.note || d.locationStatus || '';
+  });
+
+  leaveSnap.docs.forEach(doc => {
+    const d = doc.data();
+    const date = d.leaveDate || '';
+    const courseKey = d.courseGroupCode || `${d.courseCode}-${d.groupCode}`;
+
+    if (!date || !courseKey) return;
+
+    dateSet.add(date);
+
+    if (!courseMap[courseKey]) {
+      courseMap[courseKey] = {
+        courseKey,
+        courseCode: d.courseCode || '',
+        courseName: d.courseName || '',
+        groupCode: d.groupCode || '',
+        courseGroupCode: courseKey
+      };
+    }
+
+    const cell = ensureCell(courseKey, date);
+    cell.leave = d.leaveType || 'ลาเรียน';
+    cell.note = d.reason || cell.note || '';
+    cell.attachmentDataUrl = d.attachmentDataUrl || '';
+    cell.attachmentType = d.attachmentType || '';
+  });
+
+  const dates = Array.from(dateSet).sort();
+
+  const tableRows = Object.values(courseMap)
+    .sort((a, b) => (a.courseCode || '').localeCompare(b.courseCode || ''))
+    .map(course => {
+      const cells = dates.map(date => {
+        const cell = cellMap[`${course.courseKey}_${date}`] || {};
+
+        let display = '-';
+
+        if (cell.attendance && cell.leave) {
+          display = `${cell.attendance} + ${cell.leave}`;
+        } else if (cell.attendance) {
+          display = cell.attendance;
+        } else if (cell.leave) {
+          display = cell.leave;
+        }
+
+        return {
+          date,
+          display,
+          note: cell.note || '',
+          attachmentDataUrl: cell.attachmentDataUrl || '',
+          attachmentType: cell.attachmentType || ''
+        };
+      });
+
+      return {
+        ...course,
+        cells
+      };
+    });
+
+  res.render('pages/student/courseRecords', {
+    title: 'ตารางเรียนของฉัน',
+    user: req.session.user,
+    semesters: semestersSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+    selectedSemesterId,
+    dates,
+    tableRows
+  });
+});
 module.exports = router;

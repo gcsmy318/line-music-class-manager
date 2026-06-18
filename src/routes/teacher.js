@@ -372,4 +372,165 @@ router.get('/attendance', requireTeacher, async (req, res) => {
   });
 });
 
+
+router.get('/course-records', requireTeacher, async (req, res) => {
+  const teacherId = req.session.user.teacherId || req.session.user.id;
+
+  const {
+    semesterId = '',
+    courseGroupCode = ''
+  } = req.query;
+
+  const semestersSnap = await db.collection('semesters').get();
+
+  const coursesSnap = req.session.user.role === 'admin'
+    ? await db.collection('courses').where('status', '==', 'active').get()
+    : await db.collection('courses')
+        .where('teacherId', '==', teacherId)
+        .where('status', '==', 'active')
+        .get();
+
+  const courses = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  let attendanceQuery = db.collection('attendance');
+  let leaveQuery = db.collection('leave_requests');
+
+  if (req.session.user.role !== 'admin') {
+    attendanceQuery = attendanceQuery.where('teacherId', '==', teacherId);
+    leaveQuery = leaveQuery.where('teacherId', '==', teacherId);
+  }
+
+  if (semesterId) {
+    attendanceQuery = attendanceQuery.where('semesterId', '==', semesterId);
+    leaveQuery = leaveQuery.where('semesterId', '==', semesterId);
+  }
+
+  const [attendanceSnap, leaveSnap] = await Promise.all([
+    attendanceQuery.get(),
+    leaveQuery.get()
+  ]);
+
+  const studentMap = {};
+  const dateSet = new Set();
+  const cellMap = {};
+
+  function ensureStudent(studentId, studentName) {
+    if (!studentId) return;
+
+    if (!studentMap[studentId]) {
+      studentMap[studentId] = {
+        studentId,
+        studentName: studentName || studentId
+      };
+    }
+  }
+
+  function ensureCell(studentId, date) {
+    const key = `${studentId}_${date}`;
+
+    if (!cellMap[key]) {
+      cellMap[key] = {
+        attendance: '',
+        leave: '',
+        note: '',
+        attachmentDataUrl: '',
+        attachmentType: ''
+      };
+    }
+
+    return cellMap[key];
+  }
+
+  attendanceSnap.docs.forEach(doc => {
+    const d = doc.data();
+
+    if (courseGroupCode && d.courseGroupCode !== courseGroupCode) return;
+
+    const date = d.checkDate || d.attendanceDate || '';
+    const studentId = d.studentId || '';
+    const studentName = d.studentName || '';
+
+    if (!date || !studentId) return;
+
+    dateSet.add(date);
+    ensureStudent(studentId, studentName);
+
+    const cell = ensureCell(studentId, date);
+    cell.attendance = d.attendanceStatus || d.status || 'มาเรียน';
+    cell.note = d.note || d.locationStatus || '';
+  });
+
+  leaveSnap.docs.forEach(doc => {
+    const d = doc.data();
+
+    if (courseGroupCode && d.courseGroupCode !== courseGroupCode) return;
+
+    const date = d.leaveDate || '';
+    const studentId = d.studentId || '';
+    const studentName = d.studentName || '';
+
+    if (!date || !studentId) return;
+
+    dateSet.add(date);
+    ensureStudent(studentId, studentName);
+
+    const cell = ensureCell(studentId, date);
+    cell.leave = d.leaveType || 'ลาเรียน';
+    cell.note = d.reason || cell.note || '';
+    cell.attachmentDataUrl = d.attachmentDataUrl || '';
+    cell.attachmentType = d.attachmentType || '';
+  });
+
+  const dates = Array.from(dateSet).sort();
+
+  const students = Object.values(studentMap).sort((a, b) =>
+    (a.studentName || '').localeCompare(b.studentName || '', 'th')
+  );
+
+  const tableRows = students.map(student => {
+    const cells = dates.map(date => {
+      const cell = cellMap[`${student.studentId}_${date}`] || {};
+
+      let display = '-';
+
+      if (cell.attendance && cell.leave) {
+        display = `${cell.attendance} + ${cell.leave}`;
+      } else if (cell.attendance) {
+        display = cell.attendance;
+      } else if (cell.leave) {
+        display = cell.leave;
+      }
+
+      return {
+        date,
+        display,
+        attendance: cell.attendance || '',
+        leave: cell.leave || '',
+        note: cell.note || '',
+        attachmentDataUrl: cell.attachmentDataUrl || '',
+        attachmentType: cell.attachmentType || ''
+      };
+    });
+
+    return {
+      ...student,
+      cells
+    };
+  });
+
+  res.render('pages/teacher/courseRecords', {
+    title: 'ตารางสรุปรายวิชา',
+    user: req.session.user,
+    semesters: semestersSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+    courses,
+    dates,
+    tableRows,
+    filters: {
+      semesterId,
+      courseGroupCode
+    }
+  });
+});
+
+
 module.exports = router;

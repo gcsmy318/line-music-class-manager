@@ -1,0 +1,156 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="page-head">
+  <div>
+    <h1>ตารางสรุปรายวิชา</h1>
+    <p>แนวนอนเป็นวันที่จาก QR Code และวันที่ลา แนวตั้งเป็นรายชื่อนิสิต</p>
+  </div>
+</div>
+
+<form method="GET" action="/teacher/course-records" class="filter-box">
+  <div>
+    <label>ภาคการศึกษา</label>
+    <select name="semesterId">
+      <option value="">ทั้งหมด</option>
+      <% semesters.forEach(s => { %>
+        <option value="<%= s.semesterId || s.id %>" <%= filters.semesterId === (s.semesterId || s.id) ? 'selected' : '' %>>
+          <%= s.name || s.id %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
+    <label>รายวิชา</label>
+    <select name="courseGroupCode">
+      <option value="">ทั้งหมด</option>
+      <% courses.forEach(c => { %>
+        <option value="<%= c.courseGroupCode %>" <%= filters.courseGroupCode === c.courseGroupCode ? 'selected' : '' %>>
+          <%= c.courseCode %> <%= c.courseName %> กลุ่ม <%= c.groupCode %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <button type="submit">ค้นหา</button>
+</form>
+
+<div class="card">
+  <h2>ตารางเข้าเรียน / ลาเรียน</h2>
+
+  <% if (!dates || dates.length === 0) { %>
+    <p>ไม่พบข้อมูลการเข้าเรียนหรือการลา</p>
+  <% } else { %>
+    <div class="table-scroll">
+      <table class="wide-attendance-table">
+        <thead>
+          <tr>
+            <th class="sticky-col">นิสิต / วันที่</th>
+            <% dates.forEach(date => { %>
+              <th><%= date %></th>
+            <% }) %>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% tableRows.forEach(row => { %>
+            <tr>
+              <td class="sticky-col">
+                <strong><%= row.studentName || '-' %></strong><br>
+                <small><%= row.studentId || '' %></small>
+              </td>
+
+              <% row.cells.forEach(cell => { %>
+                <td>
+                  <% if (cell.display === '-') { %>
+                    -
+                  <% } else { %>
+                    <strong><%= cell.display %></strong>
+
+                    <% if (cell.note) { %>
+                      <br><small><%= cell.note %></small>
+                    <% } %>
+
+                    <% if (cell.attachmentDataUrl) { %>
+                      <br>
+                      <button
+                        type="button"
+                        onclick="openAttachment('<%= encodeURIComponent(cell.attachmentDataUrl) %>')">
+                        เอกสาร
+                      </button>
+                    <% } %>
+                  <% } %>
+                </td>
+              <% }) %>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<style>
+  .wide-attendance-table {
+    border-collapse: collapse;
+    min-width: 900px;
+    width: max-content;
+  }
+
+  .wide-attendance-table th,
+  .wide-attendance-table td {
+    border: 1px solid #e5e7eb;
+    padding: 8px;
+    text-align: center;
+    vertical-align: top;
+    min-width: 120px;
+    background: #fff;
+  }
+
+  .wide-attendance-table th {
+    background: #f8fafc;
+  }
+
+  .wide-attendance-table .sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    min-width: 220px;
+    text-align: left;
+    background: #fff;
+  }
+
+  .wide-attendance-table thead .sticky-col {
+    background: #f8fafc;
+    z-index: 3;
+  }
+</style>
+
+<script>
+function openAttachment(encodedDataUrl) {
+  const dataUrl = decodeURIComponent(encodedDataUrl);
+
+  if (!dataUrl) {
+    alert('ไม่พบเอกสารแนบ');
+    return;
+  }
+
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+
+  const blob = new Blob([u8arr], { type: mime });
+  const url = URL.createObjectURL(blob);
+
+  window.open(url, '_blank');
+}
+</script>
+
+<%- include('../../partials/footer') %>

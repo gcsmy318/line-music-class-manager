@@ -73,6 +73,7 @@
           <th>กลุ่ม</th>
           <th>ประเภท</th>
           <th>เหตุผล</th>
+          <th>เอกสาร</th>
         </tr>
       </thead>
       <tbody>
@@ -84,11 +85,53 @@
             <td><%= l.groupCode || '-' %></td>
             <td><%= l.leaveType || '-' %></td>
             <td><%= l.reason || '-' %></td>
+            <td>
+              <% if (l.attachmentDataUrl) { %>
+                 <% if ((l.attachmentType || '').startsWith('image/')) { %>
+                    <img
+                      src="<%= l.attachmentDataUrl %>"
+                      style="width:60px;height:60px;object-fit:cover;border-radius:8px;display:block;margin-bottom:6px;"
+                    >
+                  <% } %>
+                <button
+                  type="button"
+                  onclick="openAttachment('<%= encodeURIComponent(l.attachmentDataUrl || '') %>')">
+                  เปิดเอกสาร
+                </button>
+              <% } else { %>
+                -
+              <% } %>
+            </td>
           </tr>
         <% }) %>
       </tbody>
     </table>
   <% } %>
 </div>
+<script>
+function openAttachment(encodedDataUrl) {
+  const dataUrl = decodeURIComponent(encodedDataUrl);
 
+  if (!dataUrl) {
+    alert('ไม่พบเอกสารแนบ');
+    return;
+  }
+
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+
+  const blob = new Blob([u8arr], { type: mime });
+  const url = URL.createObjectURL(blob);
+
+  window.open(url, '_blank');
+}
+</script>
 <%- include('../../partials/footer') %>
