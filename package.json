@@ -6,13 +6,15 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-		"seed:rooms": "node src/scripts/seedRooms.js",
+    "seed:rooms": "node src/scripts/seedRooms.js",
     "seed:admin": "node src/utils/seedAdmin.js",
-	"create:teacher-user": "node src/scripts/createTeacherUser.js",
-	    "fix-attendance": "node src/scripts/fix-attendance-distance.js",
-		    "fix-submission-type": "node src/scripts/fix-submission-assignment-type.js"
+    "create:teacher-user": "node src/scripts/createTeacherUser.js",
+    "fix-attendance": "node src/scripts/fix-attendance-distance.js",
+    "fix-submission-type": "node src/scripts/fix-submission-assignment-type.js"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@line/bot-sdk": "^9.8.0",
     "axios": "^1.7.9",
@@ -32,7 +34,10 @@
     "method-override": "^3.0.0",
     "multer": "^1.4.5-lts.1",
     "qrcode": "^1.5.4",
+    "sharp": "^0.35.2",
     "uuid": "^11.0.5"
   },
-  "devDependencies": { "nodemon": "^3.1.9" }
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
 }
