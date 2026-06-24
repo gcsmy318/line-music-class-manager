@@ -42,6 +42,8 @@
       <a href="/teacher/enrollments" class="quick-card">✅ อนุมัติลงทะเบียนรายวิชา</a>
       <a href="/teacher/attendance" class="quick-card">✅ ตรวจสอบการเข้าเรียน</a>
       <a href="/teacher/leaves" class="quick-card">🏥 ตรวจสอบการลาเรียน</a>
+      <a href="/teacher/students-summary" class="quick-card">👨‍🎓 สรุปนิสิตทุกวิชา</a>
+      <a href="/teacher/student-profile" class="quick-card">🧾 สรุปความประพฤตินิสิต</a>
       <a href="/teacher/submissions" class="quick-card">🎬 ตรวจงาน</a>
       <a href="/teacher/qr" class="quick-card">🔳 สร้าง QR เช็คชื่อ</a>
     </div>
@@ -73,29 +75,12 @@
 <% } else if (user.role === 'teacher') { %>
 
   <div class="stat-grid">
-    <div class="stat-card">
-      <span>📚</span>
-      <p>รายวิชาที่สอน</p>
-      <strong><%= stats.courses || 0 %></strong>
-    </div>
-
-    <div class="stat-card">
-      <span>✅</span>
-      <p>เช็คชื่อวันนี้</p>
-      <strong><%= stats.todayAttendance || 0 %></strong>
-    </div>
-
-    <div class="stat-card">
-      <span>🎬</span>
-      <p>งานที่ส่งวันนี้</p>
-      <strong><%= stats.todaySubmissions || 0 %></strong>
-    </div>
-
-    <div class="stat-card warning">
-      <span>🔔</span>
-      <p>งานรอตรวจ</p>
-      <strong><%= stats.pendingSubmissions || 0 %></strong>
-    </div>
+  <div class="stat-card"><span>📚</span><p>รายวิชาที่สอน</p><strong><%= stats.courses || 0 %></strong></div>
+    <div class="stat-card warning"><span>⏳</span><p>รออนุมัติรายวิชา</p><strong><%= stats.pendingEnrollments || 0 %></strong></div>
+    <div class="stat-card"><span>✅</span><p>เช็คชื่อวันนี้</p><strong><%= stats.todayAttendance || 0 %></strong></div>
+    <div class="stat-card"><span>🏥</span><p>รายการลา</p><strong><%= stats.leaves || 0 %></strong></div>
+    <div class="stat-card"><span>🎬</span><p>งานทั้งหมด</p><strong><%= stats.submissions || 0 %></strong></div>
+    <div class="stat-card warning"><span>🔔</span><p>งานยังไม่ตรวจ</p><strong><%= stats.uncheckedSubmissions || 0 %></strong></div>
   </div>
 
 
@@ -106,6 +91,8 @@
       <a href="/teacher/attendance" class="quick-card">✅ ตรวจสอบการเข้าเรียน</a>
       <a href="/teacher/leaves" class="quick-card">🏥 ตรวจสอบการลาเรียน</a>
       <a href="/teacher/course-records"  class="quick-card">📊 ตารางสรุปเวลาเรียนรายวิชา</a>
+      <a href="/teacher/students-summary" class="quick-card">👨‍🎓 สรุปข้อมูลนิสิต</a>
+      <a href="/teacher/student-profile" class="quick-card">🧾 สรุปความประพฤตินิสิต</a>
       <a href="/teacher/submissions" class="quick-card">🎬 ตรวจงาน</a>
       <a href="/teacher/qr" class="quick-card">🔳 สร้าง QR เช็คชื่อ</a>
       <a href="/reports" class="quick-card">📊 รายงาน</a>
@@ -137,35 +124,21 @@
 <% } else if (user.role === 'student') { %>
 
   <div  class="stat-grid">
-    <div class="stat-card">
-      <span>📚</span>
-      <p>รายวิชาของฉัน</p>
-      <strong><%= stats.myCourses || 0 %></strong>
-    </div>
+       <div class="stat-card"><span>📚</span><p>ลงทะเบียนทั้งหมด</p><strong><%= stats.enrollments || 0 %></strong></div>
+       <div class="stat-card"><span>✅</span><p>รายวิชาที่อนุมัติ</p><strong><%= stats.approvedEnrollments || 0 %></strong></div>
+       <div class="stat-card"><span>🧾</span><p>เข้าเรียน</p><strong><%= stats.attendance || 0 %></strong></div>
+       <div class="stat-card"><span>🏥</span><p>ลาเรียน</p><strong><%= stats.leaves || 0 %></strong></div>
+       <div class="stat-card"><span>🎬</span><p>ส่งงาน</p><strong><%= stats.submissions || 0 %></strong></div>
+       <div class="stat-card"><span>🎹</span><p>จองห้อง</p><strong><%= stats.bookings || 0 %></strong></div>
+       <div class="stat-card"><span>📍</span><p>จองที่อนุมัติ</p><strong><%= stats.approvedBookings || 0 %></strong></div>
 
-    <div class="stat-card">
-      <span>✅</span>
-      <p>เข้าเรียนแล้ว</p>
-      <strong><%= stats.myAttendance || 0 %></strong>
-    </div>
 
-    <div class="stat-card">
-      <span>🎬</span>
-      <p>งานที่ส่ง</p>
-      <strong><%= stats.mySubmissions || 0 %></strong>
-    </div>
-
-    <div class="stat-card">
-      <span>📋</span>
-      <p>การจองห้องของฉัน</p>
-      <strong><%= stats.myBookings || 0 %></strong>
-    </div>
   </div>
 
   <div class="dashboard-section">
     <h2>👨‍🎓 งานนิสิต</h2>
     <div class="quick-grid">
-      <a href="/student" class="quick-card">👨‍🎓 ข้อมูลของฉัน</a>
+      <a href="/student" class="quick-card" hidden>👨‍🎓 ข้อมูลของฉัน</a>
       <a href="/student/enrollments" class="quick-card">📚 ลงทะเบียนรายวิชา</a>
       <a href="/student/attendance" class="quick-card">✅ การเข้าเรียนของฉัน</a>
       <a href="/student/course-records"  class="quick-card">📊 เวลาเรียนของฉัน</a>

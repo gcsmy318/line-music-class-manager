@@ -41,7 +41,7 @@ router.post('/webhook', async (req,res)=>{
     const lineUserId = event.source.userId;
     const user = await findUserByLine(lineUserId);
     try{
-  if (text === 'ลงทะเบียน') {
+/*  if (text === 'ลงทะเบียน') {
     return replyText(event.replyToken,
       'กรุณา Copy ข้อความ แล้วส่งตามรูปแบบนี้:\n\n' +
       'ลงทะเบียน\n' +
@@ -56,9 +56,9 @@ router.post('/webhook', async (req,res)=>{
       'ชั่วโมงทำงานต่อสัปดาห์: 20\n' +
       'รายได้โดยประมาณ: 5000'
     );
-  }
+  }*/
 
-
+/*
      if (text === 'ลงทะเบียน') {
        return replyText(event.replyToken,
          'เลือกรูปแบบลงทะเบียน:\n\n' +
@@ -69,7 +69,7 @@ router.post('/webhook', async (req,res)=>{
          '3) เจ้าหน้าที่\n' +
          'พิมพ์: ลงทะเบียนเจ้าหน้าที่\nตามด้วยข้อมูลเจ้าหน้าที่'
        );
-     }
+     }*/
 
      /* ลงทะเบียนอาจารย์ */
      if (text.startsWith('ลงทะเบียนอาจารย์')) {
@@ -290,7 +290,8 @@ router.post('/webhook', async (req,res)=>{
       }
       if(text === 'ข้อมูลของฉัน') return replyText(event.replyToken, user ? `ชื่อ: ${user.name}\nสถานะ: ${user.status}\nสิทธิ์: ${user.role}` : 'ยังไม่พบข้อมูล กรุณาลงทะเบียน');
       if(text.startsWith('สรุปวันนี้') || text === 'สรุประบบวันนี้') return replyText(event.replyToken, `ดูสรุปบนเว็บ: ${process.env.WEB_BASE_URL}/dashboard`);
-      return replyText(event.replyToken, 'คำสั่งที่ใช้ได้: ลงทะเบียน, ขอลิงค์ [รหัสวิชา], ส่งงาน [รหัสวิชา] [ลิงก์], ลา [รหัสวิชา] [ประเภท] [เหตุผล], ข้อมูลของฉัน');
+
+      return;
     }catch(e){ await replyText(event.replyToken, `เกิดข้อผิดพลาด: ${e.message}`); }
   }
 });

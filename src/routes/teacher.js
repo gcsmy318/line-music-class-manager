@@ -532,5 +532,291 @@ router.get('/course-records', requireTeacher, async (req, res) => {
   });
 });
 
+router.get('/students-summary', requireTeacher, async (req, res) => {
+  const teacherId = req.session.user.teacherId || req.session.user.id;
 
+  const {
+    semesterId = '',
+    courseGroupCode = ''
+  } = req.query;
+
+  const semestersSnap = await db.collection('semesters').get();
+
+  let coursesQuery = db.collection('courses').where('status', '==', 'active');
+
+  if (req.session.user.role !== 'admin') {
+    coursesQuery = coursesQuery.where('teacherId', '==', teacherId);
+  }
+
+  if (semesterId) {
+    coursesQuery = coursesQuery.where('semesterId', '==', semesterId);
+  }
+
+  const coursesSnap = await coursesQuery.get();
+  const courses = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  const allowedCourseGroups = courses.map(c => c.courseGroupCode).filter(Boolean);
+
+  let enrollSnap;
+
+  if (req.session.user.role === 'admin') {
+    enrollSnap = await db.collection('enrollments')
+      .where('status', '==', 'approved')
+      .get();
+  } else {
+    enrollSnap = await db.collection('enrollments')
+      .where('teacherId', '==', teacherId)
+      .where('status', '==', 'approved')
+      .get();
+  }
+
+  let enrollments = enrollSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  if (semesterId) {
+    enrollments = enrollments.filter(e => e.semesterId === semesterId);
+  }
+
+  if (courseGroupCode) {
+    enrollments = enrollments.filter(e => e.courseGroupCode === courseGroupCode);
+  } else if (allowedCourseGroups.length > 0) {
+    enrollments = enrollments.filter(e =>
+      allowedCourseGroups.includes(e.courseGroupCode)
+    );
+  }
+
+  const attendanceSnap = await db.collection('attendance').get();
+  const leaveSnap = await db.collection('leave_requests').get();
+  const submissionSnap = await db.collection('submissions').get();
+
+  const attendance = attendanceSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const leaves = leaveSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const submissions = submissionSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  const rows = enrollments.map(e => {
+    const courseKey = e.courseGroupCode || `${e.courseCode}-${e.groupCode}`;
+    const studentId = e.studentId;
+
+    const myAttendance = attendance.filter(a =>
+      a.studentId === studentId &&
+      (a.courseGroupCode === courseKey || a.courseId === e.courseId)
+    );
+
+    const myLeaves = leaves.filter(l =>
+      l.studentId === studentId &&
+      (l.courseGroupCode === courseKey || l.courseId === e.courseId)
+    );
+
+    const mySubmissions = submissions.filter(s =>
+      s.studentId === studentId &&
+      (s.courseGroupCode === courseKey || s.courseId === e.courseId)
+    );
+
+    return {
+      studentId,
+      studentName: e.studentName || '',
+      courseCode: e.courseCode || '',
+      courseName: e.courseName || '',
+      groupCode: e.groupCode || '',
+      courseGroupCode: e.courseGroupCode || '',
+      teacherName: e.teacherName || '',
+      semesterId: e.semesterId || '',
+
+      attendanceCount: myAttendance.length,
+      presentCount: myAttendance.filter(a => (a.attendanceStatus || a.status) === 'มาเรียน').length,
+      lateCount: myAttendance.filter(a => (a.attendanceStatus || a.status) === 'มาสาย').length,
+      absentCount: myAttendance.filter(a => (a.attendanceStatus || a.status) === 'ขาดเรียน').length,
+      leaveCount: myLeaves.length,
+      submissionCount: mySubmissions.length,
+      uncheckedSubmissionCount: mySubmissions.filter(s => s.status === 'ยังไม่ตรวจ').length,
+      checkedSubmissionCount: mySubmissions.filter(s => s.status && s.status !== 'ยังไม่ตรวจ').length
+    };
+  });
+
+  rows.sort((a, b) => {
+    if ((a.courseCode || '') !== (b.courseCode || '')) {
+      return (a.courseCode || '').localeCompare(b.courseCode || '');
+    }
+    if ((a.groupCode || '') !== (b.groupCode || '')) {
+      return (a.groupCode || '').localeCompare(b.groupCode || '');
+    }
+    return (a.studentName || '').localeCompare(b.studentName || '', 'th');
+  });
+
+  const summary = {
+    totalStudents: new Set(rows.map(r => r.studentId)).size,
+    totalRows: rows.length,
+    totalAttendance: rows.reduce((sum, r) => sum + r.attendanceCount, 0),
+    totalLeaves: rows.reduce((sum, r) => sum + r.leaveCount, 0),
+    totalSubmissions: rows.reduce((sum, r) => sum + r.submissionCount, 0),
+    uncheckedSubmissions: rows.reduce((sum, r) => sum + r.uncheckedSubmissionCount, 0)
+  };
+
+  res.render('pages/teacher/studentsSummary', {
+    title: 'สรุปข้อมูลนิสิต',
+    user: req.session.user,
+    semesters: semestersSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+    courses,
+    rows,
+    summary,
+    filters: {
+      semesterId,
+      courseGroupCode
+    }
+  });
+});
+
+
+
+router.get('/student-profile', requireTeacher, async (req, res) => {
+  const teacherId = req.session.user.teacherId || req.session.user.id;
+  const selectedStudentId = req.query.studentId || '';
+
+  let enrollSnap;
+
+  if (req.session.user.role === 'admin') {
+    enrollSnap = await db.collection('enrollments')
+      .where('status', '==', 'approved')
+      .get();
+  } else {
+    enrollSnap = await db.collection('enrollments')
+      .where('teacherId', '==', teacherId)
+      .where('status', '==', 'approved')
+      .get();
+  }
+
+  const enrollments = enrollSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  const studentMap = {};
+
+  enrollments.forEach(e => {
+    if (!e.studentId) return;
+
+    studentMap[e.studentId] = {
+      studentId: e.studentId,
+      studentName: e.studentName || e.fullName || e.studentId
+    };
+  });
+
+  const students = Object.values(studentMap).sort((a, b) =>
+    (a.studentName || '').localeCompare(b.studentName || '', 'th')
+  );
+
+  let profile = null;
+  let studentEnrollments = [];
+  let attendance = [];
+  let leaves = [];
+  let submissions = [];
+  let bookings = [];
+
+  if (selectedStudentId) {
+    const studentDoc = await db.collection('students').doc(selectedStudentId).get();
+    const userDoc = await db.collection('users').doc(selectedStudentId).get();
+
+    const studentData = studentDoc.exists ? studentDoc.data() : {};
+    const userData = userDoc.exists ? userDoc.data() : {};
+
+    studentEnrollments = enrollments.filter(e => e.studentId === selectedStudentId);
+
+    const allowedCourseGroups = studentEnrollments
+      .map(e => e.courseGroupCode)
+      .filter(Boolean);
+
+    const [
+      attendanceSnap,
+      leaveSnap,
+      submissionSnap,
+      bookingSnap
+    ] = await Promise.all([
+      db.collection('attendance').where('studentId', '==', selectedStudentId).get(),
+      db.collection('leave_requests').where('studentId', '==', selectedStudentId).get(),
+      db.collection('submissions').where('studentId', '==', selectedStudentId).get(),
+      db.collection('bookings').where('studentId', '==', selectedStudentId).get()
+    ]);
+
+    attendance = attendanceSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    leaves = leaveSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    submissions = submissionSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    bookings = bookingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    if (req.session.user.role !== 'admin') {
+      attendance = attendance.filter(a => allowedCourseGroups.includes(a.courseGroupCode));
+      leaves = leaves.filter(l => allowedCourseGroups.includes(l.courseGroupCode));
+      submissions = submissions.filter(s => allowedCourseGroups.includes(s.courseGroupCode));
+    }
+
+    const records = [];
+
+    attendance.forEach(a => {
+      records.push({
+        date: a.checkDate || a.attendanceDate || '',
+        type: 'เข้าเรียน',
+        courseCode: a.courseCode || '',
+        courseName: a.courseName || '',
+        groupCode: a.groupCode || '',
+        status: a.attendanceStatus || a.status || 'มาเรียน',
+        note: a.note || a.locationStatus || ''
+      });
+    });
+
+    leaves.forEach(l => {
+      records.push({
+        date: l.leaveDate || '',
+        type: 'ลาเรียน',
+        courseCode: l.courseCode || '',
+        courseName: l.courseName || '',
+        groupCode: l.groupCode || '',
+        status: l.leaveType || 'ลาเรียน',
+        note: l.reason || '',
+        attachmentDataUrl: l.attachmentDataUrl || ''
+      });
+    });
+
+    submissions.forEach(s => {
+      records.push({
+        date: s.submitDate || '',
+        type: 'ส่งงาน',
+        courseCode: s.courseCode || '',
+        courseName: s.courseName || '',
+        groupCode: s.groupCode || '',
+        status: s.status || 'ยังไม่ตรวจ',
+        note: s.feedback || s.suggestion || s.note || '',
+        youtubeUrl: s.youtubeUrl || '',
+        score: s.score || ''
+      });
+    });
+
+    records.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    profile = {
+      ...userData,
+      ...studentData,
+      studentId: selectedStudentId,
+      name: studentData.fullName || userData.name || userData.fullName || '',
+      email: studentData.email || userData.email || '',
+      phone: studentData.phone || userData.phone || '',
+      records,
+      summary: {
+        courses: studentEnrollments.length,
+        attendance: attendance.length,
+        present: attendance.filter(a => (a.attendanceStatus || a.status) === 'มาเรียน').length,
+        late: attendance.filter(a => (a.attendanceStatus || a.status) === 'มาสาย').length,
+        absent: attendance.filter(a => (a.attendanceStatus || a.status) === 'ขาดเรียน').length,
+        leaves: leaves.length,
+        submissions: submissions.length,
+        uncheckedSubmissions: submissions.filter(s => s.status === 'ยังไม่ตรวจ').length,
+        bookings: bookings.length,
+        checkedInBookings: bookings.filter(b => b.usageStatus === 'checked_in').length
+      }
+    };
+  }
+
+  res.render('pages/teacher/studentProfile', {
+    title: 'สรุปความประพฤตินิสิต',
+    user: req.session.user,
+    students,
+    selectedStudentId,
+    profile,
+    studentEnrollments
+  });
+});
 module.exports = router;

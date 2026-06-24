@@ -1,0 +1,172 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<div class="page-head">
+  <div>
+    <h1>สรุปความประพฤตินิสิต</h1>
+    <p>ดูข้อมูลนิสิตแบบรายบุคคล รวมการเรียน การลา การส่งงาน และการใช้ห้อง</p>
+  </div>
+</div>
+
+<form method="GET" action="/teacher/student-profile" class="filter-box">
+  <div>
+    <label>เลือกนิสิต</label>
+    <select name="studentId" required>
+      <option value="">-- เลือกนิสิต --</option>
+      <% students.forEach(s => { %>
+        <option value="<%= s.studentId %>" <%= selectedStudentId === s.studentId ? 'selected' : '' %>>
+          <%= s.studentName %> (<%= s.studentId %>)
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <button type="submit">ดูข้อมูล</button>
+</form>
+
+<% if (profile) { %>
+
+  <div class="card">
+    <h2>ข้อมูลนิสิต</h2>
+    <p><strong>รหัสนิสิต:</strong> <%= profile.studentId || '-' %></p>
+    <p><strong>ชื่อ-สกุล:</strong> <%= profile.name || '-' %></p>
+    <p><strong>อีเมล:</strong> <%= profile.email || '-' %></p>
+    <p><strong>เบอร์โทร:</strong> <%= profile.phone || '-' %></p>
+    <p><strong>วิชาเอก:</strong> <%= profile.major || '-' %></p>
+    <p><strong>ชั้นปี:</strong> <%= profile.year || '-' %></p>
+    <p><strong>เครื่องดนตรีหลัก:</strong> <%= profile.mainInstrument || '-' %></p>
+    <p><strong>สถานที่ทำงาน:</strong> <%= profile.workPlace || '-' %></p>
+    <p><strong>ชั่วโมงทำงาน/สัปดาห์:</strong> <%= profile.workHoursPerWeek || '-' %></p>
+    <p><strong>รายได้โดยประมาณ:</strong> <%= profile.income || '-' %></p>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card"><span>📚</span><p>รายวิชาที่เรียน</p><strong><%= profile.summary.courses %></strong></div>
+    <div class="stat-card"><span>✅</span><p>เข้าเรียน</p><strong><%= profile.summary.attendance %></strong></div>
+    <div class="stat-card"><span>🟢</span><p>มาเรียน</p><strong><%= profile.summary.present %></strong></div>
+    <div class="stat-card warning"><span>⏰</span><p>มาสาย</p><strong><%= profile.summary.late %></strong></div>
+    <div class="stat-card"><span>❌</span><p>ขาด</p><strong><%= profile.summary.absent %></strong></div>
+    <div class="stat-card"><span>🏥</span><p>ลาเรียน</p><strong><%= profile.summary.leaves %></strong></div>
+    <div class="stat-card"><span>🎬</span><p>ส่งงาน</p><strong><%= profile.summary.submissions %></strong></div>
+    <div class="stat-card warning"><span>🔔</span><p>งานยังไม่ตรวจ</p><strong><%= profile.summary.uncheckedSubmissions %></strong></div>
+    <div class="stat-card"><span>🎹</span><p>จองห้อง</p><strong><%= profile.summary.bookings %></strong></div>
+    <div class="stat-card"><span>📍</span><p>เข้าใช้ห้องจริง</p><strong><%= profile.summary.checkedInBookings %></strong></div>
+  </div>
+
+  <div class="card">
+    <h2>รายวิชาที่ลงทะเบียน</h2>
+
+    <% if (studentEnrollments.length === 0) { %>
+      <p>ไม่พบรายวิชา</p>
+    <% } else { %>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>ภาคเรียน</th>
+              <th>รหัสวิชา</th>
+              <th>ชื่อวิชา</th>
+              <th>กลุ่ม</th>
+              <th>อาจารย์</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% studentEnrollments.forEach(e => { %>
+              <tr>
+                <td><%= e.semesterId || '-' %></td>
+                <td><%= e.courseCode || '-' %></td>
+                <td><%= e.courseName || '-' %></td>
+                <td><%= e.groupCode || '-' %></td>
+                <td><%= e.teacherName || '-' %></td>
+                <td><%= e.status || '-' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h2>ประวัติพฤติกรรม / การเรียน</h2>
+
+    <% if (profile.records.length === 0) { %>
+      <p>ยังไม่มีประวัติ</p>
+    <% } else { %>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>วันที่</th>
+              <th>ประเภท</th>
+              <th>รายวิชา</th>
+              <th>กลุ่ม</th>
+              <th>สถานะ</th>
+              <th>คะแนน</th>
+              <th>หมายเหตุ</th>
+              <th>ไฟล์/ลิงก์</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% profile.records.forEach(r => { %>
+              <tr>
+                <td><%= r.date || '-' %></td>
+                <td><%= r.type || '-' %></td>
+                <td><%= r.courseCode || '-' %> <%= r.courseName || '' %></td>
+                <td><%= r.groupCode || '-' %></td>
+                <td><%= r.status || '-' %></td>
+                <td><%= r.score || '-' %></td>
+                <td><%= r.note || '-' %></td>
+                <td>
+                  <% if (r.youtubeUrl) { %>
+                    <a href="<%= r.youtubeUrl %>" target="_blank">เปิดงาน</a>
+                  <% } else if (r.attachmentDataUrl) { %>
+                    <button type="button" onclick="openAttachment('<%= encodeURIComponent(r.attachmentDataUrl) %>')">
+                      เปิดเอกสาร
+                    </button>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+
+<% } else { %>
+  <div class="card">
+    <p>กรุณาเลือกนิสิตเพื่อดูสรุปความประพฤติ</p>
+  </div>
+<% } %>
+
+<script>
+function openAttachment(encodedDataUrl) {
+  const dataUrl = decodeURIComponent(encodedDataUrl);
+
+  if (!dataUrl) {
+    alert('ไม่พบเอกสารแนบ');
+    return;
+  }
+
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+
+  const blob = new Blob([u8arr], { type: mime });
+  const url = URL.createObjectURL(blob);
+
+  window.open(url, '_blank');
+}
+</script>
+
+<%- include('../../partials/footer') %>

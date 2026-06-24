@@ -73,7 +73,8 @@
           <th>คะแนน</th>
           <th>สถานะ</th>
           <th>Feedback</th>
-
+          <th>ข้อเสนอแนะ</th>
+          <th>หมายเหตุ(ของนิสิต)</th>
         </tr>
       </thead>
 
@@ -93,7 +94,8 @@
             <td><%= s.score || '-' %></td>
             <td><%= s.status || '-' %></td>
             <td><%= s.feedback || '-' %></td>
-
+            <td><%= s.suggestion || '-' %></td>
+              <td><%= s.note || '-' %></td>
           </tr>
         <% }) %>
       </tbody>

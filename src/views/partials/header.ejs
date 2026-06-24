@@ -23,7 +23,7 @@
 
   <% if (user && user.role === 'student') { %>
      <a href="/dashboard">🏠 Dashboard</a>
-    <a href="/student">👨‍🎓 ข้อมูลของฉัน</a>
+    <a href="/student" hidden>👨‍🎓 ข้อมูลของฉัน</a>
     <a href="/student/enrollments">📚 ลงทะเบียนรายวิชา</a>
     <a href="/student/attendance">✅ การเข้าเรียนของฉัน</a>
     <a href="/student/leave">🏥 ลาเรียน</a>
@@ -40,12 +40,13 @@
     <a href="/teacher/attendance">✅ ตรวจสอบการเข้าเรียน</a>
     <a href="/teacher/leaves">🏥 ตรวจสอบการลาเรียน</a>
     <a href="/teacher/course-records">📊 ตารางสรุปเวลาเรียนรายวิชา</a>
+    <a href="/teacher/students-summary">👨‍🎓 สรุปข้อมูลนิสิต</a>
+    <a href="/teacher/student-profile" >🧾 สรุปความประพฤตินิสิต</a>
     <a href="/teacher/submissions">🎬 ตรวจงาน </a>
     <a href="/teacher/qr">🔳 สร้าง QR เช็คชื่อ</a>
     <a href="/reports">📊 รายงาน</a> <!--  ยังไม่เสร็จ -->
 
   <% } %>
-
 
   <% if (user && user.role === 'staff') { %>
     <a href="/dashboard">🏠 Dashboard</a>
@@ -69,11 +70,12 @@
       <a href="/reports">📊 Dashboard รายงาน</a>
       <a href="/reports/attendance">📈 รายงานการเข้าเรียน</a>
       <a href="/reports/submissions">📈 รายงานส่งงาน</a>
+      <a href="/teacher/students-summary">👨‍🎓 สรุปนิสิตทุกวิชา</a>
+      <a href="/teacher/student-profile" >🧾 สรุปความประพฤตินิสิต</a>
       <a href="/reports/bookings">📈 รายงานห้องซ้อม</a>
       <a href="/room-reports">📊 รายงานการใช้ห้อง</a>
       <!-- เครื่องมือ -->
       <div class="menu-group">เครื่องมือ</div>
-
       <a href="/admin/register-json">🧾 ลงทะเบียนด้วย JSON</a>
       <a href="/admin">⚙️ Collections</a>
 

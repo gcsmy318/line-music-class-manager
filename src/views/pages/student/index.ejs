@@ -8,11 +8,13 @@
 </div>
 
 <div class="stat-grid">
-  <div class="stat-card"><span>📚</span><p>รายวิชา</p><strong><%= stats.enrollments %></strong></div>
-  <div class="stat-card"><span>✅</span><p>เข้าเรียน</p><strong><%= stats.attendance %></strong></div>
-  <div class="stat-card"><span>🎬</span><p>ส่งงาน</p><strong><%= stats.submissions %></strong></div>
-  <div class="stat-card"><span>🏥</span><p>ลาเรียน</p><strong><%= stats.leaves %></strong></div>
-  <div class="stat-card"><span>🎹</span><p>จองห้อง</p><strong><%= stats.bookings %></strong></div>
+       <div class="stat-card"><span>📚</span><p>ลงทะเบียนทั้งหมด</p><strong><%= stats.enrollments || 0 %></strong></div>
+       <div class="stat-card"><span>✅</span><p>รายวิชาที่อนุมัติ</p><strong><%= stats.approvedEnrollments || 0 %></strong></div>
+       <div class="stat-card"><span>🧾</span><p>เข้าเรียน</p><strong><%= stats.attendance || 0 %></strong></div>
+       <div class="stat-card"><span>🏥</span><p>ลาเรียน</p><strong><%= stats.leaves || 0 %></strong></div>
+       <div class="stat-card"><span>🎬</span><p>ส่งงาน</p><strong><%= stats.submissions || 0 %></strong></div>
+       <div class="stat-card"><span>🎹</span><p>จองห้อง</p><strong><%= stats.bookings || 0 %></strong></div>
+       <div class="stat-card"><span>📍</span><p>จองที่อนุมัติ</p><strong><%= stats.approvedBookings || 0 %></strong></div>
 </div>
 
 <!-- <div class="quick-grid" style="margin-top:24px;">

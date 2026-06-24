@@ -104,6 +104,9 @@
             <label>ข้อเสนอแนะ</label>
             <textarea name="suggestion" rows="2"><%= s.suggestion || '' %></textarea>
 
+             <th>หมายเหตุ(ของนิสิต)</th>
+             <p><%= s.note || '-' %></p>
+
             <button type="submit">บันทึก</button>
           </form>
         </div>

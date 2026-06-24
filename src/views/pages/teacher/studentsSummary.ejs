@@ -1,0 +1,152 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<%
+  semesters = typeof semesters !== 'undefined' ? semesters : [];
+  courses = typeof courses !== 'undefined' ? courses : [];
+  rows = typeof rows !== 'undefined' ? rows : [];
+  summary = typeof summary !== 'undefined' ? summary : {};
+  filters = typeof filters !== 'undefined' ? filters : {};
+%>
+
+<div class="page-head">
+  <div>
+    <h1>สรุปข้อมูลนิสิต</h1>
+    <p>
+      <% if (user.role === 'admin') { %>
+        แสดงข้อมูลนิสิตทุกวิชาในระบบ
+      <% } else { %>
+        แสดงข้อมูลนิสิตในรายวิชาที่อาจารย์รับผิดชอบ
+      <% } %>
+    </p>
+  </div>
+</div>
+
+<form method="GET" action="/teacher/students-summary" class="filter-box">
+  <div>
+    <label>ภาคการศึกษา</label>
+    <select name="semesterId">
+      <option value="">ทั้งหมด</option>
+      <% semesters.forEach(s => { %>
+        <option value="<%= s.semesterId || s.id %>"
+          <%= filters.semesterId === (s.semesterId || s.id) ? 'selected' : '' %>>
+          <%= s.name || s.semesterName || s.id %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
+    <label>รายวิชา / กลุ่ม</label>
+    <select name="courseGroupCode">
+      <option value="">ทั้งหมด</option>
+      <% courses.forEach(c => { %>
+        <option value="<%= c.courseGroupCode %>"
+          <%= filters.courseGroupCode === c.courseGroupCode ? 'selected' : '' %>>
+          <%= c.courseCode %> <%= c.courseName %> กลุ่ม <%= c.groupCode %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <button type="submit">ค้นหา</button>
+</form>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <span>👨‍🎓</span>
+    <p>นิสิตทั้งหมด</p>
+    <strong><%= summary.totalStudents || 0 %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>📚</span>
+    <p>รายการลงทะเบียน</p>
+    <strong><%= summary.totalRows || 0 %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>✅</span>
+    <p>เข้าเรียนรวม</p>
+    <strong><%= summary.totalAttendance || 0 %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>🏥</span>
+    <p>ลาเรียนรวม</p>
+    <strong><%= summary.totalLeaves || 0 %></strong>
+  </div>
+
+  <div class="stat-card">
+    <span>🎬</span>
+    <p>ส่งงานรวม</p>
+    <strong><%= summary.totalSubmissions || 0 %></strong>
+  </div>
+
+  <div class="stat-card warning">
+    <span>🔔</span>
+    <p>งานยังไม่ตรวจ</p>
+    <strong><%= summary.uncheckedSubmissions || 0 %></strong>
+  </div>
+</div>
+
+<div class="card">
+  <h2>ตารางสรุปนิสิต</h2>
+
+  <% if (rows.length === 0) { %>
+    <p>ไม่พบข้อมูลนิสิต</p>
+  <% } else { %>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>นิสิต</th>
+            <th>รายวิชา</th>
+            <th>กลุ่ม</th>
+            <% if (user.role === 'admin') { %>
+              <th>อาจารย์</th>
+            <% } %>
+            <th>เข้าเรียน</th>
+            <th>มาเรียน</th>
+            <th>มาสาย</th>
+            <th>ขาด</th>
+            <th>ลา</th>
+            <th>ส่งงาน</th>
+            <th>งานยังไม่ตรวจ</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% rows.forEach(r => { %>
+            <tr>
+              <td>
+                <strong><%= r.studentName || '-' %></strong><br>
+                <small><%= r.studentId || '' %></small>
+              </td>
+
+              <td>
+                <strong><%= r.courseCode || '-' %></strong><br>
+                <small><%= r.courseName || '' %></small>
+              </td>
+
+              <td><%= r.groupCode || '-' %></td>
+
+              <% if (user.role === 'admin') { %>
+                <td><%= r.teacherName || '-' %></td>
+              <% } %>
+
+              <td><%= r.attendanceCount %></td>
+              <td><%= r.presentCount %></td>
+              <td><%= r.lateCount %></td>
+              <td><%= r.absentCount %></td>
+              <td><%= r.leaveCount %></td>
+              <td><%= r.submissionCount %></td>
+              <td><%= r.uncheckedSubmissionCount %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

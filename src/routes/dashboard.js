@@ -100,6 +100,67 @@ router.get('/', requireLogin, async (req, res) => {
     };
   }
 
+  if (role === 'teacher') {
+    const teacherId = user.teacherId || user.id;
+
+    const [
+      courses,
+      pendingEnrollments,
+      todayAttendance,
+      leaves,
+      submissions,
+      uncheckedSubmissions
+    ] = await Promise.all([
+      countQuery(db.collection('courses').where('teacherId', '==', teacherId).where('status', '==', 'active')),
+      countQuery(db.collection('enrollments').where('teacherId', '==', teacherId).where('status', '==', 'pending')),
+      countQuery(db.collection('attendance').where('teacherId', '==', teacherId).where('checkDate', '==', today)),
+      countQuery(db.collection('leave_requests').where('teacherId', '==', teacherId)),
+      countQuery(db.collection('submissions').where('teacherId', '==', teacherId)),
+      countQuery(db.collection('submissions').where('teacherId', '==', teacherId).where('status', '==', 'ยังไม่ตรวจ'))
+    ]);
+
+    stats = {
+      courses,
+      pendingEnrollments,
+      todayAttendance,
+      leaves,
+      submissions,
+      uncheckedSubmissions
+    };
+  }
+
+  if (role === 'student') {
+    const studentId = user.studentId || user.id;
+
+    const [
+      enrollments,
+      approvedEnrollments,
+      attendance,
+      leaves,
+      submissions,
+      bookings,
+      approvedBookings
+    ] = await Promise.all([
+      countQuery(db.collection('enrollments').where('studentId', '==', studentId)),
+      countQuery(db.collection('enrollments').where('studentId', '==', studentId).where('status', '==', 'approved')),
+      countQuery(db.collection('attendance').where('studentId', '==', studentId)),
+      countQuery(db.collection('leave_requests').where('studentId', '==', studentId)),
+      countQuery(db.collection('submissions').where('studentId', '==', studentId)),
+      countQuery(db.collection('bookings').where('studentId', '==', studentId)),
+      countQuery(db.collection('bookings').where('studentId', '==', studentId).where('status', '==', 'approved'))
+    ]);
+
+    stats = {
+      enrollments,
+      approvedEnrollments,
+      attendance,
+      leaves,
+      submissions,
+      bookings,
+      approvedBookings
+    };
+  }
+
   res.render('pages/dashboard', {
     title: 'หน้าหลัก',
     user,
