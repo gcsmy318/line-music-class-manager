@@ -121,12 +121,13 @@ router.post('/enrollments/:id/reject', requireTeacher, async (req, res) => {
 router.get('/submissions', requireTeacher, async (req, res) => {
   const teacherId = req.session.user.id;
 
-  const {
-    semesterId = '',
-    courseCode = '',
-    groupCode = '',
-    status = ''
-  } = req.query;
+ const {
+   semesterId = '',
+   courseCode = '',
+   groupCode = '',
+   status = '',
+   assignmentType = ''
+ } = req.query;
 
   const semestersSnap = await db.collection('semesters').get();
 
@@ -142,12 +143,13 @@ router.get('/submissions', requireTeacher, async (req, res) => {
   if (req.session.user.role !== 'admin') {
     query = query.where('teacherId', '==', teacherId);
   }
-
+  if (assignmentType) query = query.where('assignmentType', '==', assignmentType);
   if (semesterId) query = query.where('semesterId', '==', semesterId);
   if (courseCode) query = query.where('courseCode', '==', courseCode);
   if (groupCode) query = query.where('groupCode', '==', groupCode);
   if (status) query = query.where('status', '==', status);
 
+  const assignmentTypes = ['แบบฝึก', 'สเกล', 'วอร์ม', 'บทเพลง', 'อื่นๆ'];
   const submissionsSnap = await query.get();
 
   const semesters = semestersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -169,12 +171,14 @@ res.render('pages/teacher/submissions', {
   courses: courses || [],
   courseCodes: courseCodes || [],
   groupCodes: groupCodes || [],
+  assignmentTypes,
   submissions: submissions || [],
   filters: {
     semesterId,
     courseCode,
     groupCode,
-    status
+    status,
+    assignmentType
   }
 });
 });

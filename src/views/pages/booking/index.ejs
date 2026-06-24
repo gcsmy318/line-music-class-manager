@@ -178,9 +178,17 @@
                     <strong><%= found.status %></strong><br>
                   <% } %>
 
-                  <small><%= found.studentName || '-' %></small>
+                  <small>
+                    <%= found.bookerName || found.studentName || found.teacherName || '-' %>
+                    <% if (found.bookerRole === 'teacher') { %>
+                      (อาจารย์)
+                    <% } else if (found.bookerRole === 'student') { %>
+                      (นิสิต)
+                    <% } %>
+                  </small>
+
                 <% } else { %>
-                  <% if (user && user.role === 'student') { %>
+                  <% if (user && ['student', 'teacher', 'admin'].includes(user.role)) { %>
                     <form method="POST" action="/booking">
                       <input type="hidden" name="roomId" value="<%= room.id %>">
                       <input type="hidden" name="bookingDate" value="<%= selectedDate %>">

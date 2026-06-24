@@ -9,7 +9,8 @@
 		"seed:rooms": "node src/scripts/seedRooms.js",
     "seed:admin": "node src/utils/seedAdmin.js",
 	"create:teacher-user": "node src/scripts/createTeacherUser.js",
-	    "fix-attendance": "node src/scripts/fix-attendance-distance.js"
+	    "fix-attendance": "node src/scripts/fix-attendance-distance.js",
+		    "fix-submission-type": "node src/scripts/fix-submission-assignment-type.js"
   },
   "engines": { "node": ">=20" },
   "dependencies": {

@@ -57,13 +57,46 @@ router.get('/', requireLogin, async (req, res) => {
     ...d.data()
   }));
 
-  const studentId = req.session.user.studentId || req.session.user.id;
+/*  const studentId = req.session.user.studentId || req.session.user.id;
 
   const mySnap = await db.collection('bookings')
     .where('studentId', '==', studentId)
-    .get();
+    .get();*/
+  const bookerId =
+    req.session.user.studentId ||
+    req.session.user.teacherId ||
+    req.session.user.id;
 
-  const myBookings = mySnap.docs
+  const [newMySnap, oldStudentSnap] = await Promise.all([
+    db.collection('bookings')
+      .where('bookerId', '==', bookerId)
+      .get(),
+
+    db.collection('bookings')
+      .where('studentId', '==', bookerId)
+      .get()
+  ]);
+
+  const myBookingMap = {};
+
+  newMySnap.docs.forEach(d => {
+    myBookingMap[d.id] = { id: d.id, ...d.data() };
+  });
+
+  oldStudentSnap.docs.forEach(d => {
+    myBookingMap[d.id] = { id: d.id, ...d.data() };
+  });
+
+  const myBookings = Object.values(myBookingMap)
+    .sort((a, b) => {
+      if ((b.bookingDate || '') !== (a.bookingDate || '')) {
+        return (b.bookingDate || '').localeCompare(a.bookingDate || '');
+      }
+
+      return (b.startTime || '').localeCompare(a.startTime || '');
+    });
+
+/*  const myBookings = mySnap.docs
     .map(d => ({
       id: d.id,
       ...d.data()
@@ -74,7 +107,7 @@ router.get('/', requireLogin, async (req, res) => {
       }
 
       return (b.startTime || '').localeCompare(a.startTime || '');
-    });
+    });*/
 
   const pendingSnap = await db.collection('bookings')
     .where('status', '==', 'pending')
@@ -151,13 +184,39 @@ router.post('/', requireLogin, async (req, res) => {
 
   const roomDoc = await db.collection('rooms').doc(roomId).get();
   const room = roomDoc.exists ? roomDoc.data() : {};
-  const userId = req.session.user.id;
+/*  const userId = req.session.user.id;
   const studentId = req.session.user.studentId || req.session.user.id;
 
   await db.collection('bookings').add({
     userId,
     studentId,
-    studentName: req.session.user.name || '',
+    studentName: req.session.user.name || '',*/
+
+  const userId = req.session.user.id;
+  const role = req.session.user.role;
+
+    const bookerId =
+       req.session.user.studentId ||
+       req.session.user.teacherId ||
+       req.session.user.id;
+
+    const bookerName =
+       req.session.user.name ||
+       req.session.user.fullName ||
+       req.session.user.email ||
+       '';
+
+  await db.collection('bookings').add({
+    userId,
+    bookerId,
+    bookerName,
+    bookerRole: role,
+
+    studentId: role === 'student' ? bookerId : '',
+    studentName: role === 'student' ? bookerName : '',
+
+    teacherId: role === 'teacher' ? bookerId : '',
+    teacherName: role === 'teacher' ? bookerName : '',
     roomId,
     roomName: room.roomName || '',
     roomType: room.roomType || '',
@@ -183,9 +242,19 @@ router.post('/:id/cancel', requireLogin, async (req, res) => {
   }
 
   const booking = bookingDoc.data();
-  const userId = req.session.user.studentId || req.session.user.id;
+  const userId = req.session.user.id;
 
-  if (booking.studentId !== userId && booking.userId !== userId) {
+  const bookerId =
+    req.session.user.studentId ||
+    req.session.user.teacherId ||
+    req.session.user.id;
+
+  if (
+    booking.bookerId !== bookerId &&
+    booking.studentId !== bookerId &&
+    booking.teacherId !== bookerId &&
+    booking.userId !== userId
+  ) {
     req.flash('error', 'คุณไม่มีสิทธิ์จัดการรายการนี้');
     return res.redirect('/booking');
   }
@@ -196,10 +265,17 @@ router.post('/:id/cancel', requireLogin, async (req, res) => {
     return res.redirect('/booking');
   }
 
+/*
   await bookingRef.set({
     status: 'cancelled',
     cancelledAt: new Date().toISOString(),
     cancelledBy: userId
+  }, { merge: true });
+*/
+  await bookingRef.set({
+    status: 'cancelled',
+    cancelledAt: new Date().toISOString(),
+    cancelledBy: bookerId
   }, { merge: true });
 
   req.flash('success', 'ยกเลิกการจองแล้ว');

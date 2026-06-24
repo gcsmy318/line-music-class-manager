@@ -4,17 +4,150 @@
   courses = typeof courses !== 'undefined' ? courses : [];
   courseCodes = typeof courseCodes !== 'undefined' ? courseCodes : [];
   groupCodes = typeof groupCodes !== 'undefined' ? groupCodes : [];
+  assignmentTypes = typeof assignmentTypes !== 'undefined' ? assignmentTypes : ['แบบฝึก', 'สเกล', 'วอร์ม', 'บทเพลง', 'อื่นๆ'];
   submissions = typeof submissions !== 'undefined' ? submissions : [];
   filters = typeof filters !== 'undefined' ? filters : {};
 %>
+
+<style>
+  .compact-filter {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(120px, 1fr));
+    gap: 10px;
+    align-items: end;
+  }
+
+  .compact-filter label {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .compact-filter select,
+  .compact-filter button {
+    width: 100%;
+  }
+
+  .grid-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .grid-table th,
+  .grid-table td {
+    border: 1px solid #ddd;
+    padding: 7px;
+    vertical-align: top;
+  }
+
+  .grid-table th {
+    background: #f8fafc;
+    white-space: nowrap;
+  }
+
+  .review-inline {
+    display: grid;
+    gap: 5px;
+  }
+
+  .review-row {
+    display: flex;
+    gap: 5px;
+  }
+
+  .review-row input {
+    width: 70px;
+  }
+
+  .review-inline textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 38px;
+  }
+
+  .mobile-submission-list {
+    display: none;
+  }
+
+  .mobile-submission-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+    background: #fff;
+    margin-bottom: 12px;
+  }
+
+  .mobile-submission-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .mobile-submission-meta {
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.5;
+  }
+
+  .mobile-actions {
+    display: grid;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 1100px) {
+    .compact-filter {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .page-head h1 {
+      font-size: 22px;
+    }
+
+    .compact-filter {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .desktop-table-wrap {
+      display: none;
+    }
+
+    .mobile-submission-list {
+      display: block;
+    }
+
+    .card {
+      padding: 12px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .compact-filter {
+      grid-template-columns: 1fr;
+    }
+
+    .mobile-submission-head {
+      display: block;
+    }
+
+    .review-row {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+    }
+  }
+</style>
+
 <div class="page-head">
   <div>
     <h1>ตรวจงาน</h1>
-    <p>กรองตามภาคการศึกษา รายวิชา กลุ่ม และสถานะ</p>
+    <p>กรองตามภาคการศึกษา รายวิชา กลุ่ม ประเภทงาน และสถานะ</p>
   </div>
 </div>
 
-<form method="GET" action="/teacher/submissions" class="filter-box">
+<form method="GET" action="/teacher/submissions" class="filter-box compact-filter">
   <div>
     <label>ภาคการศึกษา</label>
     <select name="semesterId">
@@ -53,6 +186,18 @@
   </div>
 
   <div>
+    <label>ประเภทงาน</label>
+    <select name="assignmentType">
+      <option value="">ทั้งหมด</option>
+      <% assignmentTypes.forEach(type => { %>
+        <option value="<%= type %>" <%= filters.assignmentType === type ? 'selected' : '' %>>
+          <%= type %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div>
     <label>สถานะ</label>
     <select name="status">
       <option value="">ทั้งหมด</option>
@@ -66,54 +211,145 @@
 </form>
 
 <div class="card">
-  <h2>รายการส่งงาน</h2>
+  <h2>รายการส่งงาน (<%= submissions.length %>)</h2>
 
   <% if (submissions.length === 0) { %>
     <p>ไม่พบรายการส่งงาน</p>
   <% } else { %>
-    <div class="submission-list">
+
+    <div class="desktop-table-wrap" style="overflow:auto;">
+      <table class="grid-table">
+        <thead>
+          <tr>
+            <th>นิสิต</th>
+            <th>วิชา</th>
+            <th>ประเภทงาน</th>
+            <th>คลิป</th>
+            <th>คะแนน</th>
+            <th>สถานะ</th>
+            <th width="300">หมายเหตุ</th>
+            <th style="min-width:320px;">ตรวจงาน</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% submissions.forEach(s => { %>
+            <tr>
+              <td>
+                <strong><%= s.studentName || '-' %></strong><br>
+                <small><%= s.studentId || '-' %></small>
+              </td>
+
+              <td>
+                <strong><%= s.courseCode || '-' %></strong><br>
+                <small>กลุ่ม <%= s.groupCode || '-' %></small>
+              </td>
+
+              <td>
+                <%= s.assignmentType || 'อื่นๆ' %><br>
+                <% if (s.assignmentTitle) { %>
+                  <small><%= s.assignmentTitle %></small>
+                <% } %>
+              </td>
+
+              <td>
+                <% if (s.youtubeUrl) { %>
+                  <a href="<%= s.youtubeUrl %>" target="_blank" class="btn">เปิดคลิป</a>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+
+              <td><%= s.score || '-' %></td>
+
+              <td>
+                <% if (s.status === 'ยังไม่ตรวจ') { %>
+                  <span class="badge badge-pending">ยังไม่ตรวจ</span>
+                <% } else if (s.status === 'ต้องแก้ไข') { %>
+                  <span class="badge badge-rejected">ต้องแก้ไข</span>
+                <% } else { %>
+                  <span class="badge badge-approved">ตรวจแล้ว</span>
+                <% } %>
+              </td>
+
+              <td><%= s.note || '-' %></td>
+
+              <td>
+                <form method="POST" action="/teacher/submissions/<%= s.id %>/review" class="review-inline">
+                  <div class="review-row">
+                    <input type="number" name="score" min="0" max="10" value="<%= s.score || '' %>">
+
+                    <select name="status">
+                      <option value="ตรวจแล้ว" <%= s.status === 'ตรวจแล้ว' ? 'selected' : '' %>>ตรวจแล้ว</option>
+                      <option value="ต้องแก้ไข" <%= s.status === 'ต้องแก้ไข' ? 'selected' : '' %>>ต้องแก้ไข</option>
+                    </select>
+                  </div>
+
+                  <textarea style="height: 70px;" name="feedback" rows="2" placeholder="Feedback"><%= s.feedback || '' %></textarea>
+                  <textarea style="height: 70px;" name="suggestion" rows="2" placeholder="ข้อเสนอแนะ"><%= s.suggestion || '' %></textarea>
+
+                  <button type="submit" class="btn btn-approve">บันทึก</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-submission-list">
       <% submissions.forEach(s => { %>
-        <div class="submission-card">
-          <div class="submission-info">
-            <h3><%= s.studentName || '-' %></h3>
-            <p><%= s.studentId || '-' %></p>
-            <p><strong><%= s.courseCode || '-' %></strong> <%= s.courseName || '' %></p>
-            <p>กลุ่ม <%= s.groupCode || '-' %></p>
-            <a href="<%= s.youtubeUrl %>" target="_blank" class="btn">เปิดคลิป</a>
+        <div class="mobile-submission-card">
+          <div class="mobile-submission-head">
+            <div>
+              <strong><%= s.studentName || '-' %></strong><br>
+              <small><%= s.studentId || '-' %></small>
+            </div>
+
+            <div>
+              <% if (s.status === 'ยังไม่ตรวจ') { %>
+                <span class="badge badge-pending">ยังไม่ตรวจ</span>
+              <% } else if (s.status === 'ต้องแก้ไข') { %>
+                <span class="badge badge-rejected">ต้องแก้ไข</span>
+              <% } else { %>
+                <span class="badge badge-approved">ตรวจแล้ว</span>
+              <% } %>
+            </div>
           </div>
 
-          <form method="POST" action="/teacher/submissions/<%= s.id %>/review" class="review-form">
-            <div class="form-row">
-              <div>
-                <label>คะแนน</label>
-                <input type="number" name="score" min="0" max="10" value="<%= s.score || '' %>">
-              </div>
+          <div class="mobile-submission-meta">
+            <div><strong>วิชา:</strong> <%= s.courseCode || '-' %> กลุ่ม <%= s.groupCode || '-' %></div>
+            <div><strong>ประเภท:</strong> <%= s.assignmentType || 'อื่นๆ' %> <%= s.assignmentTitle ? '(' + s.assignmentTitle + ')' : '' %></div>
+            <div><strong>คะแนนเดิม:</strong> <%= s.score || '-' %></div>
+            <div><strong>หมายเหตุ:</strong> <%= s.note || '-' %></div>
+          </div>
 
-              <div>
-                <label>สถานะ</label>
+          <div class="mobile-actions">
+            <% if (s.youtubeUrl) { %>
+              <a href="<%= s.youtubeUrl %>" target="_blank" class="btn">เปิดคลิป</a>
+            <% } %>
+
+            <form method="POST" action="/teacher/submissions/<%= s.id %>/review" class="review-inline">
+              <div class="review-row">
+                <input type="number" name="score" min="0" max="10" value="<%= s.score || '' %>">
+
                 <select name="status">
                   <option value="ตรวจแล้ว" <%= s.status === 'ตรวจแล้ว' ? 'selected' : '' %>>ตรวจแล้ว</option>
                   <option value="ต้องแก้ไข" <%= s.status === 'ต้องแก้ไข' ? 'selected' : '' %>>ต้องแก้ไข</option>
                 </select>
               </div>
-            </div>
 
-            <label>Feedback</label>
-            <textarea name="feedback" rows="2"><%= s.feedback || '' %></textarea>
+              <textarea name="feedback" rows="2" placeholder="Feedback"><%= s.feedback || '' %></textarea>
+              <textarea name="suggestion" rows="2" placeholder="ข้อเสนอแนะ"><%= s.suggestion || '' %></textarea>
 
-            <label>ข้อเสนอแนะ</label>
-            <textarea name="suggestion" rows="2"><%= s.suggestion || '' %></textarea>
-
-             <th>หมายเหตุ(ของนิสิต)</th>
-             <p><%= s.note || '-' %></p>
-
-            <button type="submit">บันทึก</button>
-          </form>
+              <button type="submit" class="btn btn-approve">บันทึก</button>
+            </form>
+          </div>
         </div>
       <% }) %>
     </div>
+
   <% } %>
 </div>
 
 <%- include('../../partials/footer') %>
-

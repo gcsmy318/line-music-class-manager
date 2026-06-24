@@ -46,6 +46,21 @@
         <% }) %>
       </select>
 
+    <label>ประเภทงาน</label>
+    <select name="assignmentType" id="assignmentType" required onchange="toggleOtherAssignment()">
+      <option value="">-- เลือกประเภทงาน --</option>
+      <option value="แบบฝึก">แบบฝึก</option>
+      <option value="สเกล">สเกล</option>
+      <option value="วอร์ม">วอร์ม</option>
+      <option value="บทเพลง">บทเพลง</option>
+      <option value="อื่นๆ">อื่นๆ</option>
+    </select>
+
+    <div id="otherAssignmentBox" style="display:none;">
+      <label>ชื่องาน</label>
+      <input type="text" name="assignmentTitle" id="assignmentTitle" placeholder="ระบุชื่องาน">
+    </div>
+
       <label>ลิงก์ YouTube</label>
       <input type="url" name="youtubeUrl" placeholder="https://youtube.com/..." required>
 
@@ -69,6 +84,8 @@
           <th>วันที่</th>
           <th>รายวิชา</th>
           <th>กลุ่ม</th>
+          <th>ประเภทงาน</th>
+          <th>ชื่องาน</th>
           <th>ลิงก์</th>
           <th>คะแนน</th>
           <th>สถานะ</th>
@@ -84,6 +101,8 @@
             <td><%= s.submitDate || '-' %></td>
             <td><%= s.courseCode || '-' %> <%= s.courseName || '' %></td>
             <td><%= s.groupCode || '-' %></td>
+            <td><%= s.assignmentType || '-' %></td>
+            <td><%= s.assignmentTitle || '-' %></td>
             <td>
               <% if (s.youtubeUrl) { %>
                 <a href="<%= s.youtubeUrl %>" target="_blank">เปิดคลิป</a>
@@ -102,5 +121,20 @@
     </table>
   <% } %>
 </div>
+<script>
+function toggleOtherAssignment() {
+  const type = document.getElementById('assignmentType').value;
+  const box = document.getElementById('otherAssignmentBox');
+  const input = document.getElementById('assignmentTitle');
 
+  if (type === 'อื่นๆ') {
+    box.style.display = 'block';
+    input.required = true;
+  } else {
+    box.style.display = 'none';
+    input.required = false;
+    input.value = '';
+  }
+}
+</script>
 <%- include('../../partials/footer') %>

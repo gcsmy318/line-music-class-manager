@@ -332,7 +332,14 @@ router.get('/submissions', requireStudent, async (req, res) => {
 
 router.post('/submissions', requireStudent, async (req, res) => {
   const studentId = getMyId(req);
-  const { semesterId, enrollmentId, youtubeUrl, note } = req.body;
+  const {
+    semesterId,
+    enrollmentId,
+    assignmentType,
+    assignmentTitle,
+    youtubeUrl,
+    note
+  } = req.body;
 
   const enrollDoc = await db.collection('enrollments').doc(enrollmentId).get();
 
@@ -342,6 +349,11 @@ router.post('/submissions', requireStudent, async (req, res) => {
   }
 
   const e = enrollDoc.data();
+
+  const finalAssignmentTitle =
+  assignmentType === 'อื่นๆ'
+    ? assignmentTitle
+    : assignmentType;
 
   await db.collection('submissions').add({
     studentId,
@@ -355,6 +367,8 @@ router.post('/submissions', requireStudent, async (req, res) => {
     semesterId: semesterId || e.semesterId || '',
     teacherId: e.teacherId || '',
     teacherName: e.teacherName || '',
+    assignmentType: assignmentType || '',
+    assignmentTitle: finalAssignmentTitle || '',
     youtubeUrl,
     note: note || '',
     score: '',

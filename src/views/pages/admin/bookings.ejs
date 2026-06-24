@@ -204,8 +204,15 @@
         </td>
 
         <td>
-          <strong><%= b.studentName || '-' %></strong><br>
-          <span class="muted"><%= b.studentId || '-' %></span>
+      <strong>
+        <%= b.bookerName || b.studentName || b.teacherName || b.userName || '-' %>
+      </strong><br>
+
+      <span class="muted">
+        <%= b.bookerRole === 'teacher' ? 'อาจารย์' : b.bookerRole === 'student' ? 'นิสิต' : 'ผู้ใช้งาน' %>
+        |
+        <%= b.bookerId || b.studentId || b.teacherId || b.userId || '-' %>
+      </span>
         </td>
 
         <td>
