@@ -6,10 +6,72 @@ const { replyText, isValidLineSignature } = require('../services/lineService');
 const { generatePassword, hashPassword } = require('../utils/password');
 const router = express.Router();
 
+const {
+  getThaiDateString,
+  getSummaryGroupByDestination,
+  saveSummaryGroup,
+  setSummaryGroupEnabled,
+  buildAttendanceSummary
+} = require('../services/attendanceSummaryService');
+
 async function findUserByLine(lineUserId){
   const s=await db.collection('users').where('lineUserId','==',lineUserId).limit(1).get();
   return s.empty?null:{id:s.docs[0].id,...s.docs[0].data()};
 }
+
+function getLineDestination(event) {
+  if (event.source?.groupId) {
+    return {
+      destinationId: event.source.groupId,
+      sourceType: 'group'
+    };
+  }
+
+  if (event.source?.roomId) {
+    return {
+      destinationId: event.source.roomId,
+      sourceType: 'room'
+    };
+  }
+
+  return {
+    destinationId: event.source?.userId || '',
+    sourceType: 'user'
+  };
+}
+
+function canManageSummary(user) {
+  return Boolean(
+    user &&
+    ['admin', 'teacher', 'staff'].includes(user.role) &&
+    user.status === 'approved'
+  );
+}
+
+function parseSummaryGroupSetting(text) {
+  const year =
+    text.match(/ชั้นปี\s*:\s*(\d+)/i)?.[1] ||
+    text.match(/(?:ชั้น)?ปี\s*(\d+)/i)?.[1];
+
+  const semester =
+    text.match(/เทอม\s*:\s*(\d+)/i)?.[1] ||
+    text.match(/เทอม\s*(\d+)/i)?.[1] ||
+    text.match(/ภาคเรียน\s*:\s*(\d+)/i)?.[1];
+
+  const academicYear =
+    text.match(/ปีการศึกษา\s*:\s*(\d{4})/i)?.[1] ||
+    text.match(/ปีการศึกษา\s*(\d{4})/i)?.[1] ||
+    text.match(/(?:เทอม\s*:?\s*\d+)\s+(\d{4})/i)?.[1];
+
+  return {
+    year,
+    semester,
+    academicYear
+  };
+}
+
+
+
 async function createQr(courseCode, user){
   const courseSnap = await db.collection('courses').where('courseCode','==',courseCode).limit(1).get();
   const course = courseSnap.empty ? { courseCode, courseId:'', teacherId:user.id, semesterId:'' } : { id:courseSnap.docs[0].id, ...courseSnap.docs[0].data() };
@@ -267,6 +329,174 @@ router.post('/webhook', async (req,res)=>{
      }
 
 
+if (text.startsWith('ตั้งค่ากลุ่ม')) {
+  if (!canManageSummary(user)) {
+    return replyText(
+      event.replyToken,
+      'คำสั่งนี้ใช้ได้เฉพาะ Admin อาจารย์ หรือเจ้าหน้าที่ที่ได้รับอนุมัติแล้ว'
+    );
+  }
+
+  const { destinationId, sourceType } =
+    getLineDestination(event);
+
+  if (sourceType === 'user') {
+    return replyText(
+      event.replyToken,
+      'กรุณาใช้คำสั่งนี้ในกลุ่ม LINE ที่ต้องการรับสรุป'
+    );
+  }
+
+  const {
+    year,
+    semester,
+    academicYear
+  } = parseSummaryGroupSetting(text);
+
+  if (!year || !semester || !academicYear) {
+    return replyText(
+      event.replyToken,
+      'กรุณาพิมพ์:\n' +
+      'ตั้งค่ากลุ่ม ชั้นปี: 1 เทอม: 1 ปีการศึกษา: 2569'
+    );
+  }
+
+  await saveSummaryGroup({
+    destinationId,
+    sourceType,
+    year,
+    semester,
+    academicYear,
+    configuredBy: user.id,
+    enabled: true
+  });
+
+  return replyText(
+    event.replyToken,
+    '✅ ตั้งค่ากลุ่มเรียบร้อย\n\n' +
+    `ชั้นปี: ${year}\n` +
+    `เทอม: ${semester}\n` +
+    `ปีการศึกษา: ${academicYear}\n` +
+    'ส่งอัตโนมัติทุกวันเวลา 20:00 น.'
+  );
+}
+
+if (
+  text === 'ดูค่ากลุ่ม' ||
+  text === 'ดูการตั้งค่ากลุ่ม'
+) {
+  const { destinationId } =
+    getLineDestination(event);
+
+  const config =
+    await getSummaryGroupByDestination(destinationId);
+
+  if (!config) {
+    return replyText(
+      event.replyToken,
+      'กลุ่มนี้ยังไม่ได้ตั้งค่ารับสรุป'
+    );
+  }
+
+  return replyText(
+    event.replyToken,
+    '⚙️ การตั้งค่ากลุ่ม\n\n' +
+    `ชั้นปี: ${config.studentYear}\n` +
+    `เทอม: ${config.semester}\n` +
+    `ปีการศึกษา: ${config.academicYear}\n` +
+    `สถานะ: ${config.enabled ? 'เปิด' : 'ปิด'}`
+  );
+}
+
+if (text === 'เปิดสรุปกลุ่ม') {
+  if (!canManageSummary(user)) {
+    return replyText(
+      event.replyToken,
+      'ไม่มีสิทธิ์ใช้คำสั่งนี้'
+    );
+  }
+
+  const { destinationId } =
+    getLineDestination(event);
+
+  const config =
+    await setSummaryGroupEnabled(destinationId, true);
+
+  if (!config) {
+    return replyText(
+      event.replyToken,
+      'กลุ่มนี้ยังไม่ได้ตั้งค่า'
+    );
+  }
+
+  return replyText(
+    event.replyToken,
+    '✅ เปิดสรุปอัตโนมัติแล้ว'
+  );
+}
+
+if (text === 'ปิดสรุปกลุ่ม') {
+  if (!canManageSummary(user)) {
+    return replyText(
+      event.replyToken,
+      'ไม่มีสิทธิ์ใช้คำสั่งนี้'
+    );
+  }
+
+  const { destinationId } =
+    getLineDestination(event);
+
+  const config =
+    await setSummaryGroupEnabled(destinationId, false);
+
+  if (!config) {
+    return replyText(
+      event.replyToken,
+      'กลุ่มนี้ยังไม่ได้ตั้งค่า'
+    );
+  }
+
+  return replyText(
+    event.replyToken,
+    '⏸ ปิดสรุปอัตโนมัติแล้ว'
+  );
+}
+
+if (
+  text === 'สรุปเข้าเรียน' ||
+  text === 'สรุปการเข้าเรียน' ||
+  text === 'สรุปวันนี้'
+) {
+  const { destinationId } =
+    getLineDestination(event);
+
+  const config =
+    await getSummaryGroupByDestination(destinationId);
+
+  if (!config) {
+    return replyText(
+      event.replyToken,
+      'กลุ่มนี้ยังไม่ได้ตั้งค่า\n\n' +
+      'พิมพ์:\n' +
+      'ตั้งค่ากลุ่ม ชั้นปี: 1 เทอม: 1 ปีการศึกษา: 2569'
+    );
+  }
+
+  const summary =
+    await buildAttendanceSummary(
+      config,
+      getThaiDateString()
+    );
+
+  return replyText(
+    event.replyToken,
+    summary
+  );
+}
+
+
+
+
       if(text.startsWith('ขอลิงค์')){
         if(!user || !['teacher','admin'].includes(user.role)) return replyText(event.replyToken,'คำสั่งนี้ใช้ได้เฉพาะอาจารย์/Admin');
         const courseCode = text.split(/\s+/)[1];
@@ -289,7 +519,16 @@ router.post('/webhook', async (req,res)=>{
         return replyText(event.replyToken,'บันทึกการลาแล้ว');
       }
       if(text === 'ข้อมูลของฉัน') return replyText(event.replyToken, user ? `ชื่อ: ${user.name}\nสถานะ: ${user.status}\nสิทธิ์: ${user.role}` : 'ยังไม่พบข้อมูล กรุณาลงทะเบียน');
+/*
       if(text.startsWith('สรุปวันนี้') || text === 'สรุประบบวันนี้') return replyText(event.replyToken, `ดูสรุปบนเว็บ: ${process.env.WEB_BASE_URL}/dashboard`);
+*/
+
+      if (text === 'สรุประบบวันนี้') {
+        return replyText(
+          event.replyToken,
+          `ดูสรุประบบบนเว็บ: ${process.env.WEB_BASE_URL}/dashboard`
+        );
+      }
 
       return;
     }catch(e){ await replyText(event.replyToken, `เกิดข้อผิดพลาด: ${e.message}`); }
