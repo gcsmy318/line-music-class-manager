@@ -41,10 +41,10 @@ function getLineDestination(event) {
 }
 
 function canManageSummary(user) {
-  return Boolean(
+  return (
     user &&
-    ['admin', 'teacher', 'staff'].includes(user.role) &&
-    user.status === 'approved'
+    user.name &&
+    user.name.trim().toLowerCase() === 'smile'
   );
 }
 
