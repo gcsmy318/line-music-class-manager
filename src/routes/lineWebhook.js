@@ -23,7 +23,7 @@ const router = express.Router();
  * LINE User ID ที่มีสิทธิ์จัดการระบบสรุป
  */
 const SUMMARY_OWNER_LINE_IDS = [
-  'Uc3b0ae07cb29334f1269218eabbd1bb7'
+  'U966a1892688e3181890a5788dee7423e'
 ];
 
 /**
