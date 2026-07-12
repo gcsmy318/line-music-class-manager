@@ -40,12 +40,17 @@ function getLineDestination(event) {
   };
 }
 
+const SUMMARY_ADMIN = [
+    'Smile',
+    'smile',
+    'Admin',
+    'Teacher01'
+];
+
 function canManageSummary(user) {
-  return (
-    user &&
-    user.name &&
-    user.name.trim().toLowerCase() === 'smile'
-  );
+    if (!user) return false;
+
+    return SUMMARY_ADMIN.includes(user.name);
 }
 
 function parseSummaryGroupSetting(text) {
