@@ -40,17 +40,13 @@ function getLineDestination(event) {
   };
 }
 
-const SUMMARY_ADMIN = [
-    'Smile',
-    'smile',
-    'Admin',
-    'Teacher01'
-];
+const SUMMARY_OWNER_LINE_ID = 'Uc3b0ae07cb29334f1269218eabbd1bb7';
 
 function canManageSummary(user) {
-    if (!user) return false;
-
-    return SUMMARY_ADMIN.includes(user.name);
+  return (
+    user &&
+    user.lineUserId === SUMMARY_OWNER_LINE_ID
+  );
 }
 
 function parseSummaryGroupSetting(text) {
