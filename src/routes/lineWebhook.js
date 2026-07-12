@@ -40,12 +40,13 @@ function getLineDestination(event) {
   };
 }
 
-const SUMMARY_OWNER_LINE_ID = 'Uc3b0ae07cb29334f1269218eabbd1bb7';
+const SUMMARY_OWNER_LINE_ID =
+  'Uc3b0ae07cb29334f1269218eabbd1bb7';
 
-function canManageSummary(user) {
+function canManageSummary(lineUserId) {
   return (
-    user &&
-    user.lineUserId === SUMMARY_OWNER_LINE_ID
+    typeof lineUserId === 'string' &&
+    lineUserId.trim() === SUMMARY_OWNER_LINE_ID
   );
 }
 
@@ -102,6 +103,16 @@ router.post('/webhook', async (req,res)=>{
     if(event.type !== 'message' || event.message.type !== 'text') continue;
     const text = event.message.text.trim();
     const lineUserId = event.source.userId;
+
+
+    console.log('LINE EVENT SOURCE:', event.source);
+    console.log('CURRENT LINE USER ID:', lineUserId);
+    console.log(
+      'IS SUMMARY OWNER:',
+      canManageSummary(lineUserId)
+    );
+
+
     const user = await findUserByLine(lineUserId);
     try{
 /*  if (text === 'ลงทะเบียน') {
@@ -331,20 +342,29 @@ router.post('/webhook', async (req,res)=>{
 
 
 if (text.startsWith('ตั้งค่ากลุ่ม')) {
-  if (!canManageSummary(user)) {
+  if (!canManageSummary(lineUserId)) {
     return replyText(
       event.replyToken,
-      'คำสั่งนี้ใช้ได้เฉพาะ Admin อาจารย์ หรือเจ้าหน้าที่ที่ได้รับอนุมัติแล้ว'
+      'คำสั่งนี้ใช้ได้เฉพาะเจ้าของระบบ'
     );
   }
 
-  const { destinationId, sourceType } =
-    getLineDestination(event);
+  const {
+    destinationId,
+    sourceType
+  } = getLineDestination(event);
+
+  if (!destinationId) {
+    return replyText(
+      event.replyToken,
+      'ไม่พบรหัสปลายทางของ LINE'
+    );
+  }
 
   if (sourceType === 'user') {
     return replyText(
       event.replyToken,
-      'กรุณาใช้คำสั่งนี้ในกลุ่ม LINE ที่ต้องการรับสรุป'
+      'กรุณาพิมพ์คำสั่งนี้ภายในกลุ่ม LINE ที่ต้องการรับสรุป'
     );
   }
 
@@ -357,7 +377,7 @@ if (text.startsWith('ตั้งค่ากลุ่ม')) {
   if (!year || !semester || !academicYear) {
     return replyText(
       event.replyToken,
-      'กรุณาพิมพ์:\n' +
+      'รูปแบบไม่ถูกต้อง กรุณาพิมพ์:\n\n' +
       'ตั้งค่ากลุ่ม ชั้นปี: 1 เทอม: 1 ปีการศึกษา: 2569'
     );
   }
@@ -368,7 +388,7 @@ if (text.startsWith('ตั้งค่ากลุ่ม')) {
     year,
     semester,
     academicYear,
-    configuredBy: user.id,
+    configuredBy: lineUserId,
     enabled: true
   });
 
@@ -410,7 +430,7 @@ if (
 }
 
 if (text === 'เปิดสรุปกลุ่ม') {
-  if (!canManageSummary(user)) {
+  if (!canManageSummary(lineUserId)) {
     return replyText(
       event.replyToken,
       'ไม่มีสิทธิ์ใช้คำสั่งนี้'
@@ -437,7 +457,7 @@ if (text === 'เปิดสรุปกลุ่ม') {
 }
 
 if (text === 'ปิดสรุปกลุ่ม') {
-  if (!canManageSummary(user)) {
+  if (!canManageSummary(lineUserId)) {
     return replyText(
       event.replyToken,
       'ไม่มีสิทธิ์ใช้คำสั่งนี้'
