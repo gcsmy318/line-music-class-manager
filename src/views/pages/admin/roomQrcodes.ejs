@@ -1,0 +1,111 @@
+
+<%- include('../../partials/header', { title, user }) %>
+
+<style>
+  .qr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+  .qr-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+  }
+  .qr-card img { max-width: 210px; width: 100%; }
+  .qr-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 20px;
+  }
+  .qr-form label { display: grid; gap: 5px; }
+  .qr-form input, .qr-form select {
+    padding: 9px;
+    min-width: 150px;
+  }
+  .qr-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+  .qr-actions a, .qr-actions button {
+    padding: 9px 12px;
+    border-radius: 8px;
+    font: inherit;
+  }
+</style>
+
+<h2>จัดการห้องซ้อมและ QR Code</h2>
+<p>เพิ่มห้องใหม่ หรือสร้าง QR สำหรับห้องที่มีอยู่แล้ว</p>
+
+<div class="card">
+  <h3>เพิ่มห้องซ้อม</h3>
+
+  <form class="qr-form"
+        method="POST"
+        action="/admin/room-qrcodes/create">
+
+    <label>ชื่อห้อง
+      <input name="roomName" required
+             placeholder="ห้องซ้อมเปียโน 1">
+    </label>
+
+    <label>ประเภทห้อง
+      <select name="roomType" required>
+        <option value="piano">เปียโน</option>
+        <option value="vocal">ร้องเพลง</option>
+        <option value="other">อื่น ๆ</option>
+      </select>
+    </label>
+
+    <label>หมายเลขห้อง
+      <input name="roomNo" placeholder="1">
+    </label>
+
+    <button type="submit">เพิ่มห้อง + สร้าง QR</button>
+  </form>
+</div>
+
+<div class="qr-grid">
+  <% rooms.forEach(room => { %>
+    <div class="qr-card">
+      <h3><%= room.roomName || room.id %></h3>
+
+      <p>
+        <%= room.roomType || '-' %>
+        |
+        <%= room.status || '-' %>
+      </p>
+
+      <% if (room.qrImage) { %>
+        <img src="<%= room.qrImage %>" alt="QR Code">
+
+        <div class="qr-actions">
+          <a href="/admin/room-qrcodes/<%= encodeURIComponent(room.id) %>/png">
+            ดาวน์โหลด PNG
+          </a>
+
+          <form method="POST"
+                action="/admin/room-qrcodes/<%= encodeURIComponent(room.id) %>/rotate"
+                onsubmit="return confirm('QR เก่าจะใช้ไม่ได้ทันที ยืนยันหรือไม่?')">
+            <button type="submit">ออก QR ใหม่</button>
+          </form>
+        </div>
+      <% } else { %>
+        <p>ยังไม่มี QR Code</p>
+
+        <form method="POST"
+              action="/admin/room-qrcodes/<%= encodeURIComponent(room.id) %>/generate">
+          <button type="submit">สร้าง QR</button>
+        </form>
+      <% } %>
+    </div>
+  <% }) %>
+</div>
+
+<%- include('../../partials/footer') %>

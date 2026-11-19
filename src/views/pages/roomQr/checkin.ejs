@@ -1,0 +1,82 @@
+<%- include('../../partials/header', { title, user }) %>
+
+<style>
+  .checkin-panel {
+    max-width: 520px;
+    margin: 24px auto;
+    padding: 24px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    text-align: center;
+  }
+  .checkin-panel button {
+    padding: 14px 25px;
+    font-size: 16px;
+  }
+</style>
+
+<div class="checkin-panel">
+  <h2>🎹 เช็คอินห้องซ้อม</h2>
+
+  <h3><%= room.roomName || room.id %></h3>
+
+  <p>บัญชี: <%= user.name || user.id %></p>
+  <p>กรุณาอยู่ในบริเวณคณะและเปิด GPS</p>
+
+  <form method="POST"
+        action="/room-qr/<%= encodeURIComponent(token) %>/checkin"
+        id="checkinForm">
+
+    <input type="hidden" name="latitude" id="latitude">
+    <input type="hidden" name="longitude" id="longitude">
+
+    <button type="button" id="checkinButton"
+            onclick="confirmRoomCheckin()">
+      📍 ตรวจตำแหน่งและเช็คอิน
+    </button>
+  </form>
+
+  <p id="locationStatus"></p>
+  <p>ต้องมีรายการจองที่ได้รับอนุมัติในช่วงเวลาปัจจุบัน</p>
+</div>
+
+<script>
+  function confirmRoomCheckin() {
+    const status = document.getElementById('locationStatus');
+    const button = document.getElementById('checkinButton');
+
+    if (!navigator.geolocation) {
+      status.textContent = 'อุปกรณ์นี้ไม่รองรับ GPS';
+      return;
+    }
+
+    button.disabled = true;
+    status.textContent = 'กำลังตรวจสอบตำแหน่ง...';
+
+    navigator.geolocation.getCurrentPosition(
+      function(pos) {
+        document.getElementById('latitude').value =
+          pos.coords.latitude;
+
+        document.getElementById('longitude').value =
+          pos.coords.longitude;
+
+        status.textContent = 'พบตำแหน่งแล้ว กำลังเช็คอิน';
+        document.getElementById('checkinForm').submit();
+      },
+      function() {
+        status.textContent =
+          'ไม่สามารถอ่าน GPS ได้ กรุณาอนุญาตตำแหน่ง';
+        button.disabled = false;
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
+  }
+</script>
+
+<%- include('../../partials/footer') %>

@@ -220,6 +220,14 @@ app.get('/session-test', (req, res) => {
   });
 });
 
+
+
+app.use(
+  '/',
+  require('./routes/roomQr')
+);
+
+
 /**
  * 404
  */

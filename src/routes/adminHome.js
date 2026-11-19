@@ -24,6 +24,7 @@ router.get('/', requireLogin, (req, res) => {
     { title: 'การลาเรียน', desc: 'ดูข้อมูลการลา', icon: '🏥', url: '/admin/leave_requests' },
     { title: 'งานที่ส่ง', desc: 'ดูงานและคลิปที่นิสิตส่ง', icon: '🎬', url: '/admin/submissions' },
     { title: 'QR เช็คชื่อ', desc: 'ดูรอบ QR Code ที่สร้าง', icon: '🔳', url: '/admin/qr_sessions' },
+	{ title: 'QR ห้องซ้อม',  desc: 'เพิ่มห้อง สร้าง QR และดาวน์โหลดป้ายเช็คอิน',  icon: '🔳',  url: '/admin/room-qrcodes'},
     { title: 'ประวัติใช้ห้อง', desc: 'บันทึกสแกนเข้าใช้ห้อง', icon: '🏫', url: '/admin/room_usage_logs' },
     { title: 'รายงาน', desc: 'Export Excel / CSV', icon: '📊', url: '/reports' }
   ];
