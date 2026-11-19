@@ -7,8 +7,29 @@ const {
   bangkokDate, userOwnsBooking, inBookingWindow, checkinBooking
 }=require('../services/roomCheckinService');
 const router=express.Router();
+// Canonical public HTTPS origin for Render: do not trust proxy protocol as the browser URL.
+function publicRoomQrOrigin(req) {
+  const host = String(req.get('host') || '').split(':')[0].toLowerCase();
+  if (host === 'line-music-class-manager.onrender.com') {
+    return 'https://line-music-class-manager.onrender.com';
+  }
+  const configured = String(process.env.WEB_BASE_URL || process.env.RENDER_EXTERNAL_URL || '').trim();
+  if (configured) {
+    try {
+      const parsed = new URL(configured);
+      if (parsed.protocol === 'https:' || (process.env.NODE_ENV !== 'production' && parsed.protocol === 'http:')) {
+        return parsed.origin;
+      }
+    } catch (_) { /* invalid configured URL */ }
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://line-music-class-manager.onrender.com';
+  }
+  return `${req.protocol}://${req.get('host')}`;
+}
+
 const token=()=>crypto.randomBytes(32).toString('hex');
-const baseUrl=req=>(process.env.WEB_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/,'');
+const baseUrl=req=>publicRoomQrOrigin(req);
 const qrUrl=(req,t)=>`${baseUrl(req)}/room-qr/${encodeURIComponent(t)}`;
 function login(req,res,next) {
   if (!req.session.user) return res.redirect('/login');
@@ -21,7 +42,7 @@ function admin(req,res,next) {
 }
 function safePost(req,res,next) {
   const origin=req.get('origin');
-  const expected=`${req.protocol}://${req.get('host')}`;
+  const expected = publicRoomQrOrigin(req);
   if(origin && origin!==expected) return res.status(403).send('Invalid origin');
   next();
 }

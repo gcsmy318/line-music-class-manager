@@ -36,6 +36,7 @@ async function getReport(req){
  if(startDate>endDate)throw new Error('วันเริ่มต้นต้องไม่เกินวันสิ้นสุด');
  const roomId=clean(req.query.roomId||'');
  const yearLevel=clean(req.query.yearLevel||'');
+ const rankBy=req.query.rankBy==='used'?'used':'reserved';
  const [bookingSnap,roomSnap,studentSnap,userSnap]=await Promise.all([
    db.collection('bookings').where('bookingDate','>=',startDate).where('bookingDate','<=',endDate).get(),
    db.collection('rooms').get(),
@@ -58,6 +59,7 @@ async function getReport(req){
  const isStudent=b=>b.bookerRole==='student'||!!b.studentId;
  const successful=b=>b.status==='approved';
  const used=b=>successful(b) && (b.usageStatus==='checked_in'||!!b.checkedInAt);
+ const notCheckedIn=b=>successful(b) && !used(b);
  const hours=b=>{
    const a=minutes(b.startTime),z=minutes(b.endTime);
    return Number.isFinite(a)&&Number.isFinite(z)&&z>=a?(z-a)/60:0;
@@ -68,42 +70,50 @@ async function getReport(req){
  const yearTotals=new Map();
  for(const b of bookings){
    const rId=clean(b.roomId)||'unknown';
-   if(!roomTotals.has(rId))roomTotals.set(rId,{roomId:rId,name:b.roomName||roomName.get(rId)||'ไม่ระบุ',reserved:0,used:0,hours:0});
+   if(!roomTotals.has(rId))roomTotals.set(rId,{roomId:rId,name:b.roomName||roomName.get(rId)||'ไม่ระบุ',reserved:0,used:0,notCheckedIn:0,hours:0});
    const r=roomTotals.get(rId);
    if(successful(b))r.reserved++;
+   if(notCheckedIn(b))r.notCheckedIn++;
    if(used(b)){r.used++;r.hours+=hours(b);}
    const month=clean(b.bookingDate).slice(0,7);
    if(/^\d{4}-\d{2}$/.test(month)){
-     if(!monthTotals.has(month))monthTotals.set(month,{month,reserved:0,used:0});
+     if(!monthTotals.has(month))monthTotals.set(month,{month,reserved:0,used:0,notCheckedIn:0});
      const m=monthTotals.get(month);
      if(successful(b))m.reserved++;
+     if(notCheckedIn(b))m.notCheckedIn++;
      if(used(b))m.used++;
    }
    if(isStudent(b)){
      const sid=clean(b.studentId||b.bookerId),d=studentMap.get(sid)||{};
      if(!studentTotals.has(sid))studentTotals.set(sid,{studentId:sid,
        studentName:d.fullName||d.name||b.studentName||b.bookerName||sid,
-       yearLevel:findYear(b),reserved:0,used:0});
+       yearLevel:findYear(b),reserved:0,used:0,notCheckedIn:0});
      const st=studentTotals.get(sid);
      if(successful(b))st.reserved++;
+     if(notCheckedIn(b))st.notCheckedIn++;
      if(used(b))st.used++;
      const year=st.yearLevel;
-     if(!yearTotals.has(year))yearTotals.set(year,{yearLevel:year,reserved:0,used:0});
+     if(!yearTotals.has(year))yearTotals.set(year,{yearLevel:year,reserved:0,used:0,notCheckedIn:0});
      const y=yearTotals.get(year);
      if(successful(b))y.reserved++;
+     if(notCheckedIn(b))y.notCheckedIn++;
      if(used(b))y.used++;
    }
  }
- const roomRanking=[...roomTotals.values()].sort((a,b)=>b.used-a.used||b.reserved-a.reserved);
+ const rankCompare=(a,b)=>rankBy==='used'
+   ? b.used-a.used || b.reserved-a.reserved
+   : b.reserved-a.reserved || b.used-a.used;
+ const roomRanking=[...roomTotals.values()].sort(rankCompare);
  const studentRanking=[...studentTotals.values()].filter(s=>s.reserved>0).sort((a,b)=>b.reserved-a.reserved||b.used-a.used);
- const monthRanking=[...monthTotals.values()].sort((a,b)=>b.used-a.used||b.reserved-a.reserved);
+ const monthRanking=[...monthTotals.values()].sort(rankCompare);
  const yearRanking=[...yearTotals.values()].sort((a,b)=>b.reserved-a.reserved);
- return {filters:{startDate,endDate,semesterId,roomId,yearLevel},semesters,rooms,
+ return {filters:{startDate,endDate,semesterId,roomId,yearLevel,rankBy},semesters,rooms,
    summary:{totalBookings:bookings.length,approved:bookings.filter(successful).length,
-     checkedIn:bookings.filter(used).length,cancelled:bookings.filter(b=>b.status==='cancelled').length},
-   topRooms:roomRanking.filter(x=>x.used>0).slice(0,3),
+     checkedIn:bookings.filter(used).length,notCheckedIn:bookings.filter(notCheckedIn).length,
+     cancelled:bookings.filter(b=>b.status==='cancelled').length},
+   topRooms:roomRanking.filter(x=>x.reserved>0).slice(0,3),
    topStudents:studentRanking.slice(0,10),
-   topMonths:monthRanking.filter(x=>x.used>0).slice(0,3),
+   topMonths:monthRanking.filter(x=>x.reserved>0).slice(0,3),
    byYear:yearRanking,allMonths:[...monthTotals.values()].sort((a,b)=>a.month.localeCompare(b.month)),
    bookings:bookings.sort((a,b)=>clean(b.bookingDate).localeCompare(clean(a.bookingDate)))
  };
@@ -123,19 +133,22 @@ router.get('/export.xlsx',access,async(req,res)=>{
    }
    sheet('สรุป', ['รายการ','จำนวน'],[
      ['การจองทั้งหมด',report.summary.totalBookings],['การจองอนุมัติ',report.summary.approved],
-     ['เข้าใช้จริง',report.summary.checkedIn],['ยกเลิก',report.summary.cancelled]
+     ['เข้าใช้จริง',report.summary.checkedIn],['ยังไม่เช็คอิน',report.summary.notCheckedIn],
+     ['ยกเลิก',report.summary.cancelled]
    ]);
-   sheet('Top3 ห้อง',['ห้อง','จองอนุมัติ','เข้าใช้จริง','ชั่วโมงช่วงที่จอง'],
-     report.topRooms.map(x=>[x.name,x.reserved,x.used,Number(x.hours.toFixed(2))]));
-   sheet('Top10 นิสิต',['รหัสนิสิต','ชื่อ','ชั้นปี','จองอนุมัติ','เข้าใช้จริง'],
-     report.topStudents.map(x=>[x.studentId,x.studentName,x.yearLevel,x.reserved,x.used]));
-   sheet('แยกชั้นปี',['ชั้นปี','จองอนุมัติ','เข้าใช้จริง'],
-     report.byYear.map(x=>[x.yearLevel,x.reserved,x.used]));
-   sheet('รายเดือน',['เดือน','จองอนุมัติ','เข้าใช้จริง'],
-     report.allMonths.map(x=>[x.month,x.reserved,x.used]));
-   sheet('รายการจอง',['Booking ID','วันที่','ห้อง','ผู้จอง','รหัสนิสิต','สถานะจอง','สถานะเข้าใช้','เริ่ม','สิ้นสุด'],
+   sheet('Top3 ห้อง',['ห้อง','จองอนุมัติ','เข้าใช้จริง','ยังไม่เช็คอิน','ชั่วโมงช่วงที่จอง'],
+     report.topRooms.map(x=>[x.name,x.reserved,x.used,x.notCheckedIn,Number(x.hours.toFixed(2))]));
+   sheet('Top10 นิสิต',['รหัสนิสิต','ชื่อ','ชั้นปี','จองอนุมัติ','เข้าใช้จริง','ยังไม่เช็คอิน'],
+     report.topStudents.map(x=>[x.studentId,x.studentName,x.yearLevel,x.reserved,x.used,x.notCheckedIn]));
+   sheet('แยกชั้นปี',['ชั้นปี','จองอนุมัติ','เข้าใช้จริง','ยังไม่เช็คอิน'],
+     report.byYear.map(x=>[x.yearLevel,x.reserved,x.used,x.notCheckedIn]));
+   sheet('รายเดือน',['เดือน','จองอนุมัติ','เข้าใช้จริง','ยังไม่เช็คอิน'],
+     report.allMonths.map(x=>[x.month,x.reserved,x.used,x.notCheckedIn]));
+   sheet('รายการจอง',['Booking ID','วันที่','ห้อง','ผู้จอง','รหัสนิสิต','สถานะจอง','สถานะเข้าใช้','เช็คอินแล้วหรือยัง','เริ่ม','สิ้นสุด'],
      report.bookings.map(b=>[b.id,b.bookingDate,b.roomName,b.bookerName||b.studentName,
-       b.studentId||b.bookerId,b.status,b.usageStatus||'',b.startTime,b.endTime]));
+       b.studentId||b.bookerId,b.status,b.usageStatus||'',
+       b.status==='approved' && (b.usageStatus==='checked_in'||!!b.checkedInAt)?'เช็คอินแล้ว':
+         b.status==='approved'?'ยังไม่เช็คอิน':'ไม่อยู่ในรายการอนุมัติ',b.startTime,b.endTime]));
    res.set('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
    res.set('Content-Disposition','attachment; filename="room-statistics.xlsx"');
    await book.xlsx.write(res);res.end();

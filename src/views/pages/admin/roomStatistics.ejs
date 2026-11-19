@@ -15,7 +15,7 @@
 </style>
 <section class="rs">
   <h1>สถิติการจองและใช้ห้องซ้อม</h1>
-  <p>จัดอันดับตามการเช็คอินจริง และแสดงยอดการจองที่อนุมัติแยกกัน</p>
+  <p>แสดงทั้งการจองที่อนุมัติ การเข้าใช้จริง และรายการที่ยังไม่เช็คอิน (อาจเป็นการจองล่วงหน้า)</p>
   <form method="GET" action="/admin/room-statistics">
     <div><label>เทอม (ใช้ช่วงวันที่ของเทอม)</label><select name="semesterId">
       <option value="all" <%= filters.semesterId==='all'?'selected':'' %>>ทุกเทอมในช่วงวันที่</option>
@@ -29,30 +29,34 @@
     <div><label>ชั้นปี</label><select name="yearLevel"><option value="">ทุกชั้นปี</option>
       <% ['ปี 1','ปี 2','ปี 3','ปี 4','ปี 5','ปี 6','ไม่ระบุชั้นปี'].forEach(x=>{ %><option value="<%= x %>" <%= filters.yearLevel===x?'selected':'' %>><%= x %></option><% }) %>
     </select></div>
+    <div><label>จัดอันดับ Top 3 ตาม</label><select name="rankBy">
+      <option value="reserved" <%= filters.rankBy==='reserved'?'selected':'' %>>จองอนุมัติ (รวมที่ยังไม่เช็คอิน)</option>
+      <option value="used" <%= filters.rankBy==='used'?'selected':'' %>>เข้าใช้จริง</option>
+    </select></div>
     <div style="display:flex;align-items:end"><button type="submit" class="action">แสดงสถิติ</button></div>
   </form>
-  <p><a href="/admin/room-statistics/export.xlsx?startDate=<%= encodeURIComponent(filters.startDate) %>&endDate=<%= encodeURIComponent(filters.endDate) %>&semesterId=<%= encodeURIComponent(filters.semesterId) %>&roomId=<%= encodeURIComponent(filters.roomId) %>&yearLevel=<%= encodeURIComponent(filters.yearLevel) %>">⬇️ Export Excel</a></p>
+  <p><a href="/admin/room-statistics/export.xlsx?startDate=<%= encodeURIComponent(filters.startDate) %>&endDate=<%= encodeURIComponent(filters.endDate) %>&semesterId=<%= encodeURIComponent(filters.semesterId) %>&roomId=<%= encodeURIComponent(filters.roomId) %>&yearLevel=<%= encodeURIComponent(filters.yearLevel) %>&rankBy=<%= encodeURIComponent(filters.rankBy) %>">⬇️ Export Excel</a></p>
   <div class="numbers">
-    <% [['การจองทั้งหมด',summary.totalBookings],['อนุมัติ',summary.approved],['เข้าใช้จริง',summary.checkedIn],['ยกเลิก',summary.cancelled]].forEach(p=>{ %>
+    <% [['การจองทั้งหมด',summary.totalBookings],['อนุมัติ',summary.approved],['เข้าใช้จริง',summary.checkedIn],['ยังไม่เช็คอิน',summary.notCheckedIn],['ยกเลิก',summary.cancelled]].forEach(p=>{ %>
       <div class="number"><span><%= p[0] %></span><strong><%= p[1] %></strong></div>
     <% }) %>
   </div>
   <div class="cols">
-    <div class="panel"><h2>🏆 Top 3 ห้องที่ใช้งานจริงมากที่สุด</h2><div class="scroll"><table><thead><tr><th>อันดับ</th><th>ห้อง</th><th>ครั้งที่ใช้</th><th>จองอนุมัติ</th></tr></thead><tbody>
-      <% topRooms.forEach((r,i)=>{ %><tr><td><%= i+1 %></td><td><%= r.name %></td><td><%= r.used %></td><td><%= r.reserved %></td></tr><% }) %>
-    </tbody></table></div><% if(!topRooms.length){ %><p>ยังไม่มีข้อมูลเช็คอินจริง</p><% } %></div>
-    <div class="panel"><h2>📅 Top 3 เดือนที่ใช้ห้องมากที่สุด</h2><div class="scroll"><table><thead><tr><th>อันดับ</th><th>เดือน</th><th>ใช้จริง</th><th>จองอนุมัติ</th></tr></thead><tbody>
-      <% topMonths.forEach((r,i)=>{ %><tr><td><%= i+1 %></td><td><%= r.month %></td><td><%= r.used %></td><td><%= r.reserved %></td></tr><% }) %>
-    </tbody></table></div><% if(!topMonths.length){ %><p>ยังไม่มีข้อมูลเช็คอินจริง</p><% } %></div>
+    <div class="panel"><h2>🏆 Top 3 ห้อง (<%= filters.rankBy==='used' ? 'จัดอันดับตามเช็คอินจริง' : 'จัดอันดับตามยอดจองอนุมัติ' %>)</h2><div class="scroll"><table><thead><tr><th>อันดับ</th><th>ห้อง</th><th>เข้าใช้จริง</th><th>จองอนุมัติ</th><th>ยังไม่เช็คอิน</th></tr></thead><tbody>
+      <% topRooms.forEach((r,i)=>{ %><tr><td><%= i+1 %></td><td><%= r.name %></td><td><%= r.used %></td><td><%= r.reserved %></td><td><%= r.notCheckedIn %></td></tr><% }) %>
+    </tbody></table></div><% if(!topRooms.length){ %><p>ยังไม่มีรายการจองที่อนุมัติในช่วงวันที่นี้</p><% } %></div>
+    <div class="panel"><h2>📅 Top 3 เดือน (<%= filters.rankBy==='used' ? 'จัดอันดับตามเช็คอินจริง' : 'จัดอันดับตามยอดจองอนุมัติ' %>)</h2><div class="scroll"><table><thead><tr><th>อันดับ</th><th>เดือน</th><th>ใช้จริง</th><th>จองอนุมัติ</th><th>ยังไม่เช็คอิน</th></tr></thead><tbody>
+      <% topMonths.forEach((r,i)=>{ %><tr><td><%= i+1 %></td><td><%= r.month %></td><td><%= r.used %></td><td><%= r.reserved %></td><td><%= r.notCheckedIn %></td></tr><% }) %>
+    </tbody></table></div><% if(!topMonths.length){ %><p>ยังไม่มีรายการจองที่อนุมัติในช่วงวันที่นี้</p><% } %></div>
   </div>
   <div class="cols">
-    <div class="panel"><h2>👩‍🎓 นิสิตที่จองมากที่สุด Top 10</h2><div class="scroll"><table><thead><tr><th>อันดับ</th><th>นิสิต</th><th>ชั้นปี</th><th>จอง</th><th>ใช้จริง</th></tr></thead><tbody>
-      <% topStudents.forEach((r,i)=>{ %><tr><td><%= i+1 %></td><td><%= r.studentName %> (<%= r.studentId %>)</td><td><%= r.yearLevel %></td><td><%= r.reserved %></td><td><%= r.used %></td></tr><% }) %>
+    <div class="panel"><h2>👩‍🎓 นิสิตที่จองมากที่สุด Top 10</h2><div class="scroll"><table><thead><tr><th>อันดับ</th><th>นิสิต</th><th>ชั้นปี</th><th>จอง</th><th>ใช้จริง</th><th>ยังไม่เช็คอิน</th></tr></thead><tbody>
+      <% topStudents.forEach((r,i)=>{ %><tr><td><%= i+1 %></td><td><%= r.studentName %> (<%= r.studentId %>)</td><td><%= r.yearLevel %></td><td><%= r.reserved %></td><td><%= r.used %></td><td><%= r.notCheckedIn %></td></tr><% }) %>
     </tbody></table></div></div>
-    <div class="panel"><h2>📊 การจองแยกตามชั้นปี</h2><div class="scroll"><table><thead><tr><th>ชั้นปี</th><th>จองอนุมัติ</th><th>ใช้จริง</th></tr></thead><tbody>
-      <% byYear.forEach(r=>{ %><tr><td><%= r.yearLevel %></td><td><%= r.reserved %></td><td><%= r.used %></td></tr><% }) %>
+    <div class="panel"><h2>📊 การจองแยกตามชั้นปี</h2><div class="scroll"><table><thead><tr><th>ชั้นปี</th><th>จองอนุมัติ</th><th>ใช้จริง</th><th>ยังไม่เช็คอิน</th></tr></thead><tbody>
+      <% byYear.forEach(r=>{ %><tr><td><%= r.yearLevel %></td><td><%= r.reserved %></td><td><%= r.used %></td><td><%= r.notCheckedIn %></td></tr><% }) %>
     </tbody></table></div></div>
   </div>
-  <p style="color:#64748b;font-size:13px">หมายเหตุ: การใช้ห้องจริงนับจากรายการจองที่อนุมัติและมีการเช็คอิน ไม่ได้นับทุกการสแกนใน room_usage_logs เพื่อป้องกันนับซ้ำ ชั้นปีอ่านจากข้อมูลนิสิต หากไม่ได้กรอกจะเป็น “ไม่ระบุชั้นปี”</p>
+  <p style="color:#64748b;font-size:13px">หมายเหตุ: “ยังไม่เช็คอิน” = การจองที่อนุมัติแต่ยังไม่มีเช็คอิน รวมรายการจองล่วงหน้า ไม่ใช่การยืนยันว่า “ไม่มาใช้ห้อง” ส่วน “ใช้จริง” นับเฉพาะรายการที่มีเช็คอิน ชั้นปีอ่านจากข้อมูลนิสิตที่มีอยู่</p>
 </section>
 <%- include('../../partials/footer') %>
