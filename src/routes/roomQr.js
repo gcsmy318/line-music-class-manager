@@ -40,12 +40,47 @@ function admin(req,res,next) {
   if (req.session.user.role!=='admin') return res.status(403).send('เฉพาะ Admin');
   next();
 }
-function safePost(req,res,next) {
-  const origin=req.get('origin');
-  const expected = publicRoomQrOrigin(req);
-  if(origin && origin!==expected) return res.status(403).send('Invalid origin');
-  next();
+
+function safePost(req, res, next) {
+  const allowedOrigins = new Set([
+    'https://line-music-class-manager.onrender.com'
+  ]);
+
+  if (process.env.NODE_ENV !== 'production') {
+    allowedOrigins.add('http://localhost:3000');
+    allowedOrigins.add('http://127.0.0.1:3000');
+  }
+
+  const originHeader = req.get('Origin');
+  const refererHeader = req.get('Referer');
+
+  let requestOrigin;
+
+  try {
+    if (originHeader && originHeader !== 'null') {
+      requestOrigin = new URL(originHeader).origin;
+    } else if (!originHeader && refererHeader) {
+      requestOrigin = new URL(refererHeader).origin;
+    }
+  } catch (_) {
+    requestOrigin = null;
+  }
+
+  if (!requestOrigin || !allowedOrigins.has(requestOrigin)) {
+    console.warn('[RoomQR] Origin rejected', {
+      origin: originHeader || null,
+      referer: refererHeader || null,
+      parsedOrigin: requestOrigin || null,
+      host: req.get('host'),
+      protocol: req.protocol
+    });
+
+    return res.status(403).send('Invalid origin');
+  }
+
+  return next();
 }
+
 router.get('/admin/room-qrcodes',admin,async(req,res)=>{
   try {
     const snap=await db.collection('rooms').get();
