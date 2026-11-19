@@ -1,0 +1,109 @@
+<%- include('../../partials/header', { title, user }) %>
+<style>
+.spv2 form.filters{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;background:#fff;padding:16px;border-radius:14px;margin-bottom:16px}
+.spv2 form.filters label{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
+.spv2 form.filters input,.spv2 form.filters select{width:100%;min-width:0;padding:9px;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:7px}
+.spv2 .stat-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0}
+.spv2 .stat{padding:14px;background:#fff;border-radius:12px;border:1px solid #e2e8f0}
+.spv2 .stat strong{display:block;font-size:24px;margin-top:5px}
+.spv2 .report-card{padding:16px;background:#fff;border-radius:14px;border:1px solid #e2e8f0;margin:14px 0}
+.spv2 .scroll{overflow-x:auto}
+.spv2 table{width:100%;border-collapse:collapse;min-width:850px;font-size:13px}
+.spv2 th,.spv2 td{padding:10px 8px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}
+.spv2 th{background:#f1f5f9}
+.spv2 .muted{color:#64748b;font-size:13px}
+.spv2 .btn{padding:10px 18px;border:0;background:#172554;color:#fff;border-radius:7px;cursor:pointer}
+@media(max-width:1020px){.spv2 form.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:580px){.spv2 form.filters{grid-template-columns:1fr}}
+</style>
+<section class="spv2">
+  <div class="page-head"><div><h1>พฤติกรรมการเรียนและการใช้ห้องซ้อมรายบุคคล</h1>
+  <p>กรองภาคเรียน รายวิชา กลุ่ม วันที่ และเรียงประวัติได้ — ข้อมูลเก่าจะไม่ถูกแก้ไข</p></div></div>
+  <form method="GET" action="/teacher/student-profile" class="filters">
+    <div><label>นิสิต</label><select name="studentId" required>
+      <option value="">-- เลือกนิสิต --</option>
+      <% students.forEach(s=>{ %><option value="<%= s.studentId %>" <%= selectedStudentId===String(s.studentId)?'selected':'' %>><%= s.studentName %> (<%= s.studentId %>)</option><% }) %>
+    </select></div>
+    <div><label>ภาคเรียน</label><select name="semesterId">
+      <option value="all" <%= semesterId==='all'?'selected':'' %>>ทุกภาคเรียน</option>
+      <% semesters.forEach(s=>{ %><option value="<%= s.semesterId||s.id %>" <%= semesterId===(s.semesterId||s.id)?'selected':'' %>><%= s.name || s.semesterId || s.id %></option><% }) %>
+    </select></div>
+    <div><label>รายวิชา/กลุ่ม</label><select name="courseKey">
+      <option value="">ทุกวิชา</option>
+      <% courseOptions.forEach(c=>{ %><option value="<%= c.key %>" <%= courseKey===c.key?'selected':'' %>><%= c.courseCode %> <%= c.groupCode %> — <%= c.courseName %> (<%= c.semesterId %>)</option><% }) %>
+    </select></div>
+    <div><label>ประเภทประวัติ</label><select name="type">
+      <% [['','ทุกประเภท'],['เข้าเรียน','เข้าเรียน'],['ลาเรียน','ลาเรียน'],['ไม่พบเช็คชื่อ','ไม่ได้เช็คชื่อ'],['ส่งงาน','ส่งงาน'],['จองห้อง','จองห้องซ้อม']].forEach(p=>{ %>
+        <option value="<%= p[0] %>" <%= filters.type===p[0]?'selected':'' %>><%= p[1] %></option>
+      <% }) %>
+    </select></div>
+    <div><label>ตั้งแต่วันที่</label><input type="date" name="startDate" value="<%= filters.startDate %>"></div>
+    <div><label>ถึงวันที่</label><input type="date" name="endDate" value="<%= filters.endDate %>"></div>
+    <div><label>เรียงตาม</label><select name="sort">
+      <% [['date_desc','วันที่ใหม่ก่อน'],['date_asc','วันที่เก่าก่อน'],['course','รายวิชา'],['status','สถานะ'],['type','ประเภท'],['score_desc','คะแนนมากก่อน'],['score_asc','คะแนนน้อยก่อน']].forEach(p=>{ %>
+        <option value="<%= p[0] %>" <%= filters.sort===p[0]?'selected':'' %>><%= p[1] %></option>
+      <% }) %>
+    </select></div>
+    <div style="display:flex;align-items:flex-end"><button class="btn" type="submit">ค้นหาและสรุป</button></div>
+  </form>
+  <% if (!profile) { %>
+    <div class="report-card">กรุณาเลือกนิสิตเพื่อดูข้อมูล</div>
+  <% } else { %>
+    <div class="report-card"><h2><%= profile.name || profile.studentId %></h2>
+      <p>รหัสนิสิต <%= profile.studentId %> · ชั้นปี <%= profile.year||'ไม่ระบุ' %> · สาขา <%= profile.major||'-' %></p>
+      <p class="muted">อีเมล: <%= profile.email||'-' %></p>
+    </div>
+    <div class="stat-list">
+      <% [['📚','วิชา',profile.summary.courses],['✅','ตรงเวลา',profile.summary.present],['⏰','มาสาย',profile.summary.late],
+        ['❌','ขาด (ระบุ)',profile.summary.absent],['🏥','ลา',profile.summary.leaves],['⚠️','ไม่พบเช็คชื่อ',profile.summary.missing],
+        ['🎬','ส่งงาน',profile.summary.submissions],['🎹','จองห้อง',profile.summary.bookings],['📍','เข้าใช้จริง',profile.summary.checkedInBookings]].forEach(x=>{ %>
+        <div class="stat"><span><%= x[0] %> <%= x[1] %></span><strong><%= x[2] %></strong></div>
+      <% }) %>
+    </div>
+    <div class="report-card"><h2>พฤติกรรมเข้าเรียนแยกตามรายวิชา</h2>
+      <div class="scroll"><table><thead><tr><th>เทอม</th><th>วิชา/กลุ่ม</th><th>ตรงเวลา</th><th>สาย</th><th>ขาด</th><th>ลา</th><th>ไม่พบเช็คชื่อ</th><th>อัตรามาเรียน</th></tr></thead><tbody>
+        <% perCourseStats.forEach(c=>{ %><tr>
+          <td><%= c.semesterId %></td><td><%= c.courseCode %> <%= c.courseName %> (<%= c.groupCode %>)</td>
+          <td><%= c.present %></td><td><%= c.late %></td><td><%= c.absent %></td><td><%= c.leave %></td><td><%= c.missing %></td>
+          <td><%= c.rate==null?'-':`${c.rate}%` %></td>
+        </tr><% }) %>
+      </tbody></table></div>
+      <p class="muted">“ไม่พบเช็คชื่อ” นับจากวันที่มีรอบ QR ของวิชาที่ลงทะเบียนแล้ว แต่ไม่พบข้อมูลเช็คชื่อหรือลา จึงยังไม่ถือว่าเป็นการขาดที่ยืนยันแล้ว หากมีหลาย QR ในวันเดียวกันจะนับครั้งเดียว</p>
+    </div>
+    <div class="report-card"><h2>รายวิชาที่ลงทะเบียน</h2>
+      <div class="scroll"><table><thead><tr><th>เทอม</th><th>รหัสวิชา</th><th>ชื่อวิชา</th><th>กลุ่ม</th><th>ผู้สอน</th></tr></thead><tbody>
+        <% studentEnrollments.forEach(e=>{ %><tr><td><%= e.semesterId %></td><td><%= e.courseCode %></td><td><%= e.courseName %></td><td><%= e.groupCode %></td><td><%= e.teacherName||'-' %></td></tr><% }) %>
+      </tbody></table></div>
+    </div>
+    <div class="report-card"><h2>ประวัติการเข้าเรียน การลา การส่งงาน และจองห้อง</h2>
+      <p class="muted">การจองห้องซ้อมผูกกับนิสิตและช่วงวันที่ ไม่ได้ผูกกับรายวิชา การกรองรายวิชาจึงไม่จำกัดรายการจองห้อง</p>
+      <div class="scroll"><table><thead><tr><th>วันที่</th><th>ประเภท</th><th>เทอม</th><th>วิชา/ห้อง</th><th>สถานะ</th><th>คะแนน</th><th>รายละเอียด</th><th>ลิงก์</th></tr></thead><tbody>
+        <% records.forEach(r=>{ %><tr>
+          <td><%= r.date||'-' %></td><td><%= r.type %></td><td><%= r.semesterId||'-' %></td>
+          <td><%= r.courseLabel||'-' %></td><td><%= r.status||'-' %></td><td><%= r.score===''?'-':r.score %></td>
+          <td><%= r.note||'-' %></td><td>
+            <% if(r.link){ %><a href="<%= r.link %>" target="_blank" rel="noopener noreferrer">เปิดงาน</a>
+            <% } else if(r.attachmentDataUrl){ %><button type="button" onclick="openProfileDocument('<%= encodeURIComponent(r.attachmentDataUrl) %>')">ดูเอกสาร</button>
+            <% } else { %>-<% } %>
+          </td>
+        </tr><% }) %>
+      </tbody></table></div>
+      <% if(!records.length){ %><p>ไม่พบรายการตามตัวกรอง</p><% } %>
+    </div>
+  <% } %>
+</section>
+<script>
+function openProfileDocument(value){
+ try {
+   const url=decodeURIComponent(value);
+   if(!/^data:(image\/(?:png|jpeg|webp)|application\/pdf);base64,/i.test(url))throw new Error('ไม่รองรับชนิดไฟล์');
+   const parts=url.split(',');const mime=parts[0].match(/data:([^;]+);/)[1];
+   const raw=atob(parts[1]);const arr=new Uint8Array(raw.length);
+   for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+   const blobUrl=URL.createObjectURL(new Blob([arr],{type:mime}));
+   window.open(blobUrl,'_blank','noopener');
+   setTimeout(()=>URL.revokeObjectURL(blobUrl),60000);
+ }catch(e){alert(e.message||'เปิดเอกสารไม่ได้');}
+}
+</script>
+<%- include('../../partials/footer') %>

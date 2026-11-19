@@ -1,82 +1,46 @@
 <%- include('../../partials/header', { title, user }) %>
-
 <style>
-  .checkin-panel {
-    max-width: 520px;
-    margin: 24px auto;
-    padding: 24px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    text-align: center;
-  }
-  .checkin-panel button {
-    padding: 14px 25px;
-    font-size: 16px;
-  }
+.room-scan-box{max-width:580px;margin:auto;background:#fff;border:1px solid #dce3eb;border-radius:14px;padding:22px}
+.room-scan-box select,.room-scan-box button{display:block;width:100%;padding:12px;margin-top:10px}
+.room-scan-box p{line-height:1.65}
 </style>
-
-<div class="checkin-panel">
+<section class="room-scan-box">
   <h2>🎹 เช็คอินห้องซ้อม</h2>
-
   <h3><%= room.roomName || room.id %></h3>
-
-  <p>บัญชี: <%= user.name || user.id %></p>
-  <p>กรุณาอยู่ในบริเวณคณะและเปิด GPS</p>
-
-  <form method="POST"
-        action="/room-qr/<%= encodeURIComponent(token) %>/checkin"
-        id="checkinForm">
-
-    <input type="hidden" name="latitude" id="latitude">
-    <input type="hidden" name="longitude" id="longitude">
-
-    <button type="button" id="checkinButton"
-            onclick="confirmRoomCheckin()">
-      📍 ตรวจตำแหน่งและเช็คอิน
-    </button>
-  </form>
-
-  <p id="locationStatus"></p>
-  <p>ต้องมีรายการจองที่ได้รับอนุมัติในช่วงเวลาปัจจุบัน</p>
-</div>
-
+  <p>ผู้ใช้: <%= user.name || user.id %></p>
+  <% if (!bookingOptions.length) { %>
+    <p>ไม่พบการจองที่ได้รับอนุมัติในห้องนี้และช่วงเวลาปัจจุบัน (เช็คอินได้ตั้งแต่ 15 นาทีก่อนเริ่มจนถึงสิ้นสุดการจอง)</p>
+    <a href="/booking">ตรวจสอบรายการจอง</a>
+  <% } else { %>
+    <form id="roomQrCheckin" method="POST" action="/room-qr/<%= encodeURIComponent(token) %>/checkin">
+      <label for="bookingId">เลือกการจอง</label>
+      <select id="bookingId" name="bookingId" required>
+        <% bookingOptions.forEach(b=>{ %>
+          <option value="<%= b.id %>"><%= b.bookingDate %> <%= b.startTime %>–<%= b.endTime %> | <%= b.roomName || room.roomName %><%= b.usageStatus === 'checked_in' ? ' (เช็คอินแล้ว)' : '' %></option>
+        <% }) %>
+      </select>
+      <input type="hidden" id="latitude" name="latitude">
+      <input type="hidden" id="longitude" name="longitude">
+      <button id="qrSubmit" type="button">📍 ตรวจ GPS และเช็คอิน</button>
+    </form>
+    <p id="gpsMsg" aria-live="polite"></p>
+  <% } %>
+  <p class="muted">ต้องเปิด GPS และอยู่ในรัศมีของคณะตามที่กำหนด ระบบตรวจห้องและรายการจองก่อนบันทึกทุกครั้ง</p>
+</section>
 <script>
-  function confirmRoomCheckin() {
-    const status = document.getElementById('locationStatus');
-    const button = document.getElementById('checkinButton');
-
-    if (!navigator.geolocation) {
-      status.textContent = 'อุปกรณ์นี้ไม่รองรับ GPS';
-      return;
-    }
-
-    button.disabled = true;
-    status.textContent = 'กำลังตรวจสอบตำแหน่ง...';
-
-    navigator.geolocation.getCurrentPosition(
-      function(pos) {
-        document.getElementById('latitude').value =
-          pos.coords.latitude;
-
-        document.getElementById('longitude').value =
-          pos.coords.longitude;
-
-        status.textContent = 'พบตำแหน่งแล้ว กำลังเช็คอิน';
-        document.getElementById('checkinForm').submit();
-      },
-      function() {
-        status.textContent =
-          'ไม่สามารถอ่าน GPS ได้ กรุณาอนุญาตตำแหน่ง';
-        button.disabled = false;
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0
-      }
-    );
-  }
+(function(){
+ const btn=document.getElementById('qrSubmit');if(!btn)return;
+ const msg=document.getElementById('gpsMsg');
+ btn.addEventListener('click',()=>{
+   if(!navigator.geolocation){msg.textContent='อุปกรณ์ไม่รองรับ GPS';return;}
+   btn.disabled=true;msg.textContent='กำลังตรวจสอบ GPS...';
+   navigator.geolocation.getCurrentPosition(pos=>{
+      document.getElementById('latitude').value=pos.coords.latitude;
+      document.getElementById('longitude').value=pos.coords.longitude;
+      document.getElementById('roomQrCheckin').submit();
+   },()=>{msg.textContent='เปิดสิทธิ์ตำแหน่งแล้วลองอีกครั้ง';btn.disabled=false;},
+   {enableHighAccuracy:true,timeout:15000,maximumAge:0});
+ });
+})();
 </script>
-
 <%- include('../../partials/footer') %>

@@ -1,0 +1,58 @@
+<%- include('../../partials/header', { title, user }) %>
+<style>
+.rs form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;background:#fff;border:1px solid #e2e8f0;padding:14px;border-radius:12px;margin-bottom:16px}
+.rs form label{display:block;font-size:13px;margin-bottom:4px}
+.rs form input,.rs form select{width:100%;box-sizing:border-box;padding:9px;border:1px solid #cbd5e1;border-radius:7px}
+.rs .numbers{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.rs .number,.rs .panel{padding:16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:12px}
+.rs .number strong{display:block;font-size:26px}
+.rs .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:12px}
+.rs .scroll{overflow-x:auto}
+.rs table{width:100%;min-width:430px;border-collapse:collapse;font-size:13px}
+.rs td,.rs th{padding:9px;border-bottom:1px solid #e2e8f0;text-align:left}
+.rs th{background:#f1f5f9}
+.rs .action{background:#172554;color:#fff;border:0;border-radius:7px;padding:10px;cursor:pointer}
+</style>
+<section class="rs">
+  <h1>สถิติการจองและใช้ห้องซ้อม</h1>
+  <p>จัดอันดับตามการเช็คอินจริง และแสดงยอดการจองที่อนุมัติแยกกัน</p>
+  <form method="GET" action="/admin/room-statistics">
+    <div><label>เทอม (ใช้ช่วงวันที่ของเทอม)</label><select name="semesterId">
+      <option value="all" <%= filters.semesterId==='all'?'selected':'' %>>ทุกเทอมในช่วงวันที่</option>
+      <% semesters.forEach(s=>{ %><option value="<%= s.semesterId||s.id %>" <%= filters.semesterId===(s.semesterId||s.id)?'selected':'' %>><%= s.name||s.semesterId||s.id %></option><% }) %>
+    </select></div>
+    <div><label>เริ่มวันที่</label><input type="date" name="startDate" value="<%= filters.startDate %>"></div>
+    <div><label>ถึงวันที่</label><input type="date" name="endDate" value="<%= filters.endDate %>"></div>
+    <div><label>ห้อง</label><select name="roomId"><option value="">ทุกห้อง</option>
+      <% rooms.forEach(r=>{ %><option value="<%= r.id %>" <%= filters.roomId===r.id?'selected':'' %>><%= r.roomName||r.id %></option><% }) %>
+    </select></div>
+    <div><label>ชั้นปี</label><select name="yearLevel"><option value="">ทุกชั้นปี</option>
+      <% ['ปี 1','ปี 2','ปี 3','ปี 4','ปี 5','ปี 6','ไม่ระบุชั้นปี'].forEach(x=>{ %><option value="<%= x %>" <%= filters.yearLevel===x?'selected':'' %>><%= x %></option><% }) %>
+    </select></div>
+    <div style="display:flex;align-items:end"><button type="submit" class="action">แสดงสถิติ</button></div>
+  </form>
+  <p><a href="/admin/room-statistics/export.xlsx?startDate=<%= encodeURIComponent(filters.startDate) %>&endDate=<%= encodeURIComponent(filters.endDate) %>&semesterId=<%= encodeURIComponent(filters.semesterId) %>&roomId=<%= encodeURIComponent(filters.roomId) %>&yearLevel=<%= encodeURIComponent(filters.yearLevel) %>">⬇️ Export Excel</a></p>
+  <div class="numbers">
+    <% [['การจองทั้งหมด',summary.totalBookings],['อนุมัติ',summary.approved],['เข้าใช้จริง',summary.checkedIn],['ยกเลิก',summary.cancelled]].forEach(p=>{ %>
+      <div class="number"><span><%= p[0] %></span><strong><%= p[1] %></strong></div>
+    <% }) %>
+  </div>
+  <div class="cols">
+    <div class="panel"><h2>🏆 Top 3 ห้องที่ใช้งานจริงมากที่สุด</h2><div class="scroll"><table><thead><tr><th>อันดับ</th><th>ห้อง</th><th>ครั้งที่ใช้</th><th>จองอนุมัติ</th></tr></thead><tbody>
+      <% topRooms.forEach((r,i)=>{ %><tr><td><%= i+1 %></td><td><%= r.name %></td><td><%= r.used %></td><td><%= r.reserved %></td></tr><% }) %>
+    </tbody></table></div><% if(!topRooms.length){ %><p>ยังไม่มีข้อมูลเช็คอินจริง</p><% } %></div>
+    <div class="panel"><h2>📅 Top 3 เดือนที่ใช้ห้องมากที่สุด</h2><div class="scroll"><table><thead><tr><th>อันดับ</th><th>เดือน</th><th>ใช้จริง</th><th>จองอนุมัติ</th></tr></thead><tbody>
+      <% topMonths.forEach((r,i)=>{ %><tr><td><%= i+1 %></td><td><%= r.month %></td><td><%= r.used %></td><td><%= r.reserved %></td></tr><% }) %>
+    </tbody></table></div><% if(!topMonths.length){ %><p>ยังไม่มีข้อมูลเช็คอินจริง</p><% } %></div>
+  </div>
+  <div class="cols">
+    <div class="panel"><h2>👩‍🎓 นิสิตที่จองมากที่สุด Top 10</h2><div class="scroll"><table><thead><tr><th>อันดับ</th><th>นิสิต</th><th>ชั้นปี</th><th>จอง</th><th>ใช้จริง</th></tr></thead><tbody>
+      <% topStudents.forEach((r,i)=>{ %><tr><td><%= i+1 %></td><td><%= r.studentName %> (<%= r.studentId %>)</td><td><%= r.yearLevel %></td><td><%= r.reserved %></td><td><%= r.used %></td></tr><% }) %>
+    </tbody></table></div></div>
+    <div class="panel"><h2>📊 การจองแยกตามชั้นปี</h2><div class="scroll"><table><thead><tr><th>ชั้นปี</th><th>จองอนุมัติ</th><th>ใช้จริง</th></tr></thead><tbody>
+      <% byYear.forEach(r=>{ %><tr><td><%= r.yearLevel %></td><td><%= r.reserved %></td><td><%= r.used %></td></tr><% }) %>
+    </tbody></table></div></div>
+  </div>
+  <p style="color:#64748b;font-size:13px">หมายเหตุ: การใช้ห้องจริงนับจากรายการจองที่อนุมัติและมีการเช็คอิน ไม่ได้นับทุกการสแกนใน room_usage_logs เพื่อป้องกันนับซ้ำ ชั้นปีอ่านจากข้อมูลนิสิต หากไม่ได้กรอกจะเป็น “ไม่ระบุชั้นปี”</p>
+</section>
+<%- include('../../partials/footer') %>

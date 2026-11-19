@@ -26,6 +26,7 @@ router.get('/', requireLogin, (req, res) => {
     { title: 'QR เช็คชื่อ', desc: 'ดูรอบ QR Code ที่สร้าง', icon: '🔳', url: '/admin/qr_sessions' },
 	{ title: 'QR ห้องซ้อม',  desc: 'เพิ่มห้อง สร้าง QR และดาวน์โหลดป้ายเช็คอิน',  icon: '🔳',  url: '/admin/room-qrcodes'},
     { title: 'ประวัติใช้ห้อง', desc: 'บันทึกสแกนเข้าใช้ห้อง', icon: '🏫', url: '/admin/room_usage_logs' },
+    { title: 'สถิติห้องซ้อม', desc: 'Top 3 ห้อง/เดือน Top 10 ผู้จอง แยกชั้นปี Export Excel', icon: '📊', url: '/admin/room-statistics' },
     { title: 'รายงาน', desc: 'Export Excel / CSV', icon: '📊', url: '/reports' }
   ];
 

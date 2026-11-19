@@ -118,10 +118,7 @@ app.use(
   require('./routes/dashboard')
 );
 
-app.use(
-  '/',
-  require('./routes/roomQr')
-);
+
 
 
 app.use(
@@ -144,6 +141,9 @@ app.use(
   require('./routes/adminHome')
 );
 
+// Priority before /admin/:collection (CRUD)
+app.use('/', require('./routes/roomQr'));
+app.use('/admin/room-statistics', require('./routes/roomStatistics'));
 app.use(
   '/admin',
   require('./routes/crud')
@@ -157,6 +157,8 @@ app.use(
   require('./routes/student')
 );
 
+// This profile route supersedes the legacy GET /student-profile
+app.use('/teacher', require('./routes/teacherStudentProfileV2'));
 app.use(
   '/teacher',
   require('./routes/teacher')
