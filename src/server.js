@@ -119,6 +119,12 @@ app.use(
 );
 
 app.use(
+  '/',
+  require('./routes/roomQr')
+);
+
+
+app.use(
   '/admin/actions',
   require('./routes/adminActions')
 );
@@ -219,14 +225,6 @@ app.get('/session-test', (req, res) => {
       req.session.user || null
   });
 });
-
-
-
-app.use(
-  '/',
-  require('./routes/roomQr')
-);
-
 
 /**
  * 404
