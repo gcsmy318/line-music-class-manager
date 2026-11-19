@@ -41,6 +41,7 @@ function admin(req,res,next) {
   next();
 }
 
+
 function safePost(req, res, next) {
   const allowedOrigins = new Set([
     'https://line-music-class-manager.onrender.com'
@@ -51,35 +52,32 @@ function safePost(req, res, next) {
     allowedOrigins.add('http://127.0.0.1:3000');
   }
 
-  const originHeader = req.get('Origin');
-  const refererHeader = req.get('Referer');
+  const origin = req.get('origin');
+  const referer = req.get('referer');
 
-  let requestOrigin;
+  let requestOrigin = '';
 
   try {
-    if (originHeader && originHeader !== 'null') {
-      requestOrigin = new URL(originHeader).origin;
-    } else if (!originHeader && refererHeader) {
-      requestOrigin = new URL(refererHeader).origin;
-    }
-  } catch (_) {
-    requestOrigin = null;
+    requestOrigin = new URL(origin || referer).origin;
+  } catch (error) {
+    requestOrigin = '';
   }
 
-  if (!requestOrigin || !allowedOrigins.has(requestOrigin)) {
-    console.warn('[RoomQR] Origin rejected', {
-      origin: originHeader || null,
-      referer: refererHeader || null,
-      parsedOrigin: requestOrigin || null,
-      host: req.get('host'),
-      protocol: req.protocol
+  if (!allowedOrigins.has(requestOrigin)) {
+    console.error('[RoomQR] Invalid origin:', {
+      origin: origin || null,
+      referer: referer || null,
+      requestOrigin,
+      protocol: req.protocol,
+      host: req.get('host')
     });
 
     return res.status(403).send('Invalid origin');
   }
 
-  return next();
+  next();
 }
+
 
 router.get('/admin/room-qrcodes',admin,async(req,res)=>{
   try {
