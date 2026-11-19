@@ -149,7 +149,7 @@ router.get('/room-qr/:token',login,async(req,res)=>{
       .filter(b=>b.roomId===room.id && b.status==='approved' &&
         userOwnsBooking(b,req.session.user) && inBookingWindow(b))
       .sort((a,b)=>String(a.startTime).localeCompare(String(b.startTime)));
-    //res.render('pages/roomQr/checkin',{title:'QR เช็คอินห้องซ้อม',user:req.session.user,
+    //res.render('pages/roomQr/checkin',{title:'QR เช็คอินห้องซ้อม',user:req.session.user,      room,token:req.params.token,bookingOptions});
 	res.render('pages/roomQr/checkin', {
 	  title: 'QR เช็คอินห้องซ้อม',
 	  user: req.session.user,
@@ -158,7 +158,7 @@ router.get('/room-qr/:token',login,async(req,res)=>{
 	  bookingOptions,
 	  csrfToken: ensureRoomQrCsrfToken(req)
 	});
-      room,token:req.params.token,bookingOptions});
+
   }catch(e){console.error('qr get',e);res.status(500).send('ไม่สามารถเปิด QR ได้');}
 });
 router.post('/room-qr/:token/checkin',login,safePost,async(req,res)=>{
