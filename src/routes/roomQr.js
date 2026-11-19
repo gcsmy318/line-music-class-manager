@@ -42,6 +42,7 @@ function admin(req,res,next) {
 }
 
 
+
 function safePost(req, res, next) {
   const allowedOrigins = new Set([
     'https://line-music-class-manager.onrender.com'
@@ -54,29 +55,47 @@ function safePost(req, res, next) {
 
   const origin = req.get('origin');
   const referer = req.get('referer');
+  const fetchSite = req.get('sec-fetch-site');
 
-  let requestOrigin = '';
+  // ถ้ามี Origin ต้องตรวจ Origin ก่อน
+  if (origin) {
+    try {
+      if (allowedOrigins.has(new URL(origin).origin)) {
+        return next();
+      }
+    } catch (_) {}
 
-  try {
-    requestOrigin = new URL(origin || referer).origin;
-  } catch (error) {
-    requestOrigin = '';
-  }
-
-  if (!allowedOrigins.has(requestOrigin)) {
-    console.error('[RoomQR] Invalid origin:', {
-      origin: origin || null,
-      referer: referer || null,
-      requestOrigin,
-      protocol: req.protocol,
-      host: req.get('host')
-    });
-
+    console.warn('[RoomQR] Rejected Origin:', origin);
     return res.status(403).send('Invalid origin');
   }
 
-  next();
+  // ถ้ามี Referer ต้องตรวจ Referer
+  if (referer) {
+    try {
+      if (allowedOrigins.has(new URL(referer).origin)) {
+        return next();
+      }
+    } catch (_) {}
+
+    console.warn('[RoomQR] Rejected Referer:', referer);
+    return res.status(403).send('Invalid origin');
+  }
+
+  // Chrome ส่ง Fetch Metadata แม้ไม่มี Referer
+  if (fetchSite === 'same-origin') {
+    return next();
+  }
+
+  console.warn('[RoomQR] Rejected request:', {
+    origin: origin || null,
+    referer: referer || null,
+    fetchSite: fetchSite || null,
+    host: req.get('host')
+  });
+
+  return res.status(403).send('Invalid origin');
 }
+
 
 
 router.get('/admin/room-qrcodes',admin,async(req,res)=>{
