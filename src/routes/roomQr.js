@@ -43,58 +43,36 @@ function admin(req,res,next) {
 
 
 
-function safePost(req, res, next) {
-  const allowedOrigins = new Set([
-    'https://line-music-class-manager.onrender.com'
-  ]);
 
-  if (process.env.NODE_ENV !== 'production') {
-    allowedOrigins.add('http://localhost:3000');
-    allowedOrigins.add('http://127.0.0.1:3000');
+function ensureRoomQrCsrfToken(req) {
+  if (!req.session.roomQrCsrfToken) {
+    req.session.roomQrCsrfToken =
+      crypto.randomBytes(32).toString('hex');
   }
-
-  const origin = req.get('origin');
-  const referer = req.get('referer');
-  const fetchSite = req.get('sec-fetch-site');
-
-  // ถ้ามี Origin ต้องตรวจ Origin ก่อน
-  if (origin) {
-    try {
-      if (allowedOrigins.has(new URL(origin).origin)) {
-        return next();
-      }
-    } catch (_) {}
-
-    console.warn('[RoomQR] Rejected Origin:', origin);
-    return res.status(403).send('Invalid origin');
-  }
-
-  // ถ้ามี Referer ต้องตรวจ Referer
-  if (referer) {
-    try {
-      if (allowedOrigins.has(new URL(referer).origin)) {
-        return next();
-      }
-    } catch (_) {}
-
-    console.warn('[RoomQR] Rejected Referer:', referer);
-    return res.status(403).send('Invalid origin');
-  }
-
-  // Chrome ส่ง Fetch Metadata แม้ไม่มี Referer
-  if (fetchSite === 'same-origin') {
-    return next();
-  }
-
-  console.warn('[RoomQR] Rejected request:', {
-    origin: origin || null,
-    referer: referer || null,
-    fetchSite: fetchSite || null,
-    host: req.get('host')
-  });
-
-  return res.status(403).send('Invalid origin');
+  return req.session.roomQrCsrfToken;
 }
+
+function safePost(req, res, next) {
+  const expected = req.session?.roomQrCsrfToken;
+  const supplied = String(req.body?.roomQrCsrfToken || '');
+
+  if (
+    typeof expected !== 'string' ||
+    !/^[a-f0-9]{64}$/.test(supplied) ||
+    !/^[a-f0-9]{64}$/.test(expected) ||
+    !crypto.timingSafeEqual(
+      Buffer.from(supplied, 'hex'),
+      Buffer.from(expected, 'hex')
+    )
+  ) {
+    return res.status(403).send(
+      'คำขอไม่ถูกต้อง กรุณากลับไปหน้าจัดการ QR แล้วรีเฟรช'
+    );
+  }
+
+  return next();
+}
+
 
 
 
@@ -107,7 +85,13 @@ router.get('/admin/room-qrcodes',admin,async(req,res)=>{
       return v;
     }));
     rooms.sort((a,b)=>String(a.roomName||'').localeCompare(String(b.roomName||''),'th'));
-    res.render('pages/admin/roomQrcodes',{title:'จัดการ QR ห้องซ้อม',user:req.session.user,rooms});
+   // res.render('pages/admin/roomQrcodes',{title:'จัดการ QR ห้องซ้อม',user:req.session.user,rooms});
+	res.render('pages/admin/roomQrcodes', {
+  title: 'จัดการ QR ห้องซ้อม',
+  user: req.session.user,
+  rooms,
+  csrfToken: ensureRoomQrCsrfToken(req)
+});
   }catch(e){console.error('room qr admin',e);res.status(500).send('ไม่สามารถโหลดข้อมูล QR ห้องซ้อม');}
 });
 router.post('/admin/room-qrcodes/create',admin,safePost,async(req,res)=>{
@@ -165,7 +149,15 @@ router.get('/room-qr/:token',login,async(req,res)=>{
       .filter(b=>b.roomId===room.id && b.status==='approved' &&
         userOwnsBooking(b,req.session.user) && inBookingWindow(b))
       .sort((a,b)=>String(a.startTime).localeCompare(String(b.startTime)));
-    res.render('pages/roomQr/checkin',{title:'QR เช็คอินห้องซ้อม',user:req.session.user,
+    //res.render('pages/roomQr/checkin',{title:'QR เช็คอินห้องซ้อม',user:req.session.user,
+	res.render('pages/roomQr/checkin', {
+	  title: 'QR เช็คอินห้องซ้อม',
+	  user: req.session.user,
+	  room,
+	  token: req.params.token,
+	  bookingOptions,
+	  csrfToken: ensureRoomQrCsrfToken(req)
+	});
       room,token:req.params.token,bookingOptions});
   }catch(e){console.error('qr get',e);res.status(500).send('ไม่สามารถเปิด QR ได้');}
 });

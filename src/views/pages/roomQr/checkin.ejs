@@ -14,6 +14,11 @@
   <% } else { %>
     <form id="roomQrCheckin" method="POST" action="/room-qr/<%= encodeURIComponent(token) %>/checkin">
       <label for="bookingId">เลือกการจอง</label>
+	  <input
+		  type="hidden"
+		  name="roomQrCsrfToken"
+		  value="<%= csrfToken %>"
+		>
       <select id="bookingId" name="bookingId" required>
         <% bookingOptions.forEach(b=>{ %>
           <option value="<%= b.id %>"><%= b.bookingDate %> <%= b.startTime %>–<%= b.endTime %> | <%= b.roomName || room.roomName %><%= b.usageStatus === 'checked_in' ? ' (เช็คอินแล้ว)' : '' %></option>

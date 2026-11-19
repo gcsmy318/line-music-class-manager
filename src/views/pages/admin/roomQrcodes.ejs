@@ -66,7 +66,11 @@
     <label>หมายเลขห้อง
       <input name="roomNo" placeholder="1">
     </label>
-
+	<input
+	  type="hidden"
+	  name="roomQrCsrfToken"
+	  value="<%= csrfToken %>"
+	>
     <button type="submit">เพิ่มห้อง + สร้าง QR</button>
   </form>
 </div>
@@ -94,6 +98,11 @@
                 action="/admin/room-qrcodes/<%= encodeURIComponent(room.id) %>/rotate"
                 onsubmit="return confirm('QR เก่าจะใช้ไม่ได้ทันที ยืนยันหรือไม่?')">
             <button type="submit">ออก QR ใหม่</button>
+			<input
+			  type="hidden"
+			  name="roomQrCsrfToken"
+			  value="<%= csrfToken %>"
+			>
           </form>
         </div>
       <% } else { %>
@@ -102,6 +111,11 @@
         <form method="POST"
               action="/admin/room-qrcodes/<%= encodeURIComponent(room.id) %>/generate">
           <button type="submit">สร้าง QR</button>
+		  <input
+			  type="hidden"
+			  name="roomQrCsrfToken"
+			  value="<%= csrfToken %>"
+			>
         </form>
       <% } %>
     </div>
